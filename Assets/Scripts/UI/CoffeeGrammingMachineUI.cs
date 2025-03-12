@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 /// <summary>
@@ -8,7 +9,7 @@ public class CoffeeGrammingMachineUI : MonoBehaviour
     [SerializeField] private DropZoneUI portafilterZone;
     [SerializeField] private DropZoneUI groundCoffeeZone;
     [SerializeField] private HoldableUI grammingButton;
-    [SerializeField] private Text gramDisplayText;
+    [SerializeField] private TMP_Text gramDisplayText;
     [SerializeField] private Image qualityIndicator;
     [SerializeField] private Gradient qualityGradient;
     [SerializeField] private float grammingRate = 6f; // Grams per second
@@ -33,7 +34,7 @@ public class CoffeeGrammingMachineUI : MonoBehaviour
         if (groundCoffeeZone != null)
         {
             // Configure ground coffee drop zone
-            portafilterZone.AcceptPredicate = (item) => item is Portafilter && currentPortafilter == null;
+            groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffeeUI && currentPortafilter == null;
         }
         
         if (grammingButton != null)
