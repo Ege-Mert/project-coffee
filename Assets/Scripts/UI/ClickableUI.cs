@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
@@ -11,12 +12,16 @@ public class ClickableUI : MonoBehaviour, IPointerClickHandler, IInteractiveElem
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected float clickCooldown = 0.5f;
     [SerializeField] protected AudioSource clickSound;
+
+    public Func<bool> CanInteractCheck { get; set; }
+
     
     protected float lastClickTime;
     
-    public virtual bool CanInteract()
-    {
-        return isActive && Time.time - lastClickTime >= clickCooldown;
+    public virtual bool CanInteract() {
+    return (CanInteractCheck?.Invoke() ?? true) && 
+           isActive && 
+           Time.time - lastClickTime >= clickCooldown;
     }
     
     public virtual void OnInteractionStart()
