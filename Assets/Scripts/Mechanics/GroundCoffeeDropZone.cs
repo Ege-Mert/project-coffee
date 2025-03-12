@@ -12,8 +12,8 @@ public class GroundCoffeeDropZone : DropZoneUI
         if (!base.CanAccept(item))
             return false;
             
-        return item is GroundCoffeeUI && parentMachine != null && 
-               parentMachine.transform.childCount > 0; // Has a portafilter
+        // Accept ground coffee regardless of portafilter presence
+        return item is GroundCoffeeUI && parentMachine != null;
     }
     
     public override void OnItemDropped(DraggableUI item)

@@ -1,302 +1,400 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
 /// <summary>
-/// Coffee gramming machine for tamping coffee
+/// Coffee gramming machine for measuring and dispensing ground coffee
 /// </summary>
-public class CoffeeGrammingMachineUI : MonoBehaviour
+public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
 {
+    [Header("References")]
     [SerializeField] private DropZoneUI portafilterZone;
     [SerializeField] private DropZoneUI groundCoffeeZone;
     [SerializeField] private HoldableUI grammingButton;
-    [SerializeField] private TMP_Text gramDisplayText;
+    // Removed the single display field:
+    // [SerializeField] private TMP_Text gramDisplayText;
+    // Added separate texts for portafilter grammage and storage amount
+    [SerializeField] private TMP_Text portafilterGramText;
+    [SerializeField] private TMP_Text storageGramText;
+    
     [SerializeField] private Image qualityIndicator;
     [SerializeField] private Gradient qualityGradient;
-    [SerializeField] private float grammingRate = 6f; // Grams per second
+    
+    [Header("Settings")]
+    [SerializeField] private float grammingRate = 2f; // Grams per second when dispensing
     [SerializeField] private float idealGramAmount = 18f;
     [SerializeField] private float gramTolerance = 1f; // +/- grams for "perfect" range
+    [SerializeField] private float maxStorageCapacity = 100f; // Maximum coffee storage
+    
+    [Header("Effects")]
     [SerializeField] private ParticleSystem coffeeParticles;
     [SerializeField] private AudioSource coffeeAddSound;
-    [SerializeField] private AudioSource tampingSound;
+    [SerializeField] private AudioSource coffeeDispenseSound;
     [SerializeField] private Animator machineAnimator;
     
+    // State variables
     private Portafilter currentPortafilter;
-    private float currentGramming = 0f;
+    private float storedCoffeeAmount = 0f; // Internal coffee storage
+    private CoffeeQualityEvaluator qualityEvaluator;
+    private bool isDispensing = false;
+    
+    private void Awake()
+    {
+        qualityEvaluator = new CoffeeQualityEvaluator(idealGramAmount, gramTolerance);
+    }
     
     private void Start()
     {
+        ConfigureDropZones();
+        ConfigureGrammingButton();
+        
+        if (coffeeParticles != null)
+        {
+            coffeeParticles.Stop();
+        }
+        
+        UpdateUI();
+    }
+    
+    private void ConfigureDropZones()
+    {
         if (portafilterZone != null)
         {
-            // Configure portafilter drop zone
             portafilterZone.AcceptPredicate = (item) => item is Portafilter && currentPortafilter == null;
         }
         
         if (groundCoffeeZone != null)
         {
-            // Configure ground coffee drop zone
-            groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffeeUI && currentPortafilter == null;
+            // Accept ground coffee regardless of portafilter presence
+            groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffeeUI;
         }
-        
+    }
+    
+    private void ConfigureGrammingButton()
+    {
         if (grammingButton != null)
         {
-            // Configure gramming button
-            grammingButton.CanInteract = () => currentPortafilter != null && currentGramming > 0;
-            grammingButton.OnHold = OnGrammingHold;
-            grammingButton.OnHoldRelease = OnGrammingRelease;
+            // Can interact if there's a portafilter and stored coffee
+            grammingButton.CanInteract = () => currentPortafilter != null && storedCoffeeAmount > 0;
+            grammingButton.OnHold = OnGrammingButtonHold;
+            grammingButton.OnHoldRelease = OnGrammingButtonRelease;
         }
-        
-        if (coffeeParticles != null)
-        {
-            coffeeParticles.Stop();
-        }
-        
-        UpdateGramDisplay();
-        UpdateQualityIndicator();
     }
     
     private void Update()
     {
-        // Check for portafilter in drop zone
-        if (portafilterZone != null && portafilterZone.transform.childCount > 0 && currentPortafilter == null)
+        CheckPortafilterPresence();
+    }
+    
+    private void CheckPortafilterPresence()
+    {
+        if (portafilterZone == null) return;
+        
+        // Detect when portafilter is added
+        if (portafilterZone.transform.childCount > 0 && currentPortafilter == null)
         {
             Portafilter portafilter = portafilterZone.transform.GetChild(0).GetComponent<Portafilter>();
             if (portafilter != null)
             {
                 currentPortafilter = portafilter;
-                currentGramming = portafilter.GetItemAmount("ground_coffee");
-                UpdateGramDisplay();
-                UpdateQualityIndicator();
+                UpdateUI();
+                UIManager.Instance.ShowNotification("Portafilter placed in gramming machine");
             }
         }
-        else if (portafilterZone != null && portafilterZone.transform.childCount == 0 && currentPortafilter != null)
+        // Detect when portafilter is removed
+        else if (portafilterZone.transform.childCount == 0 && currentPortafilter != null)
         {
             currentPortafilter = null;
-            currentGramming = 0f;
-            UpdateGramDisplay();
-            UpdateQualityIndicator();
+            UpdateUI();
         }
+    }
+    
+    private void OnGrammingButtonHold(float duration)
+    {
+        if (currentPortafilter == null || storedCoffeeAmount <= 0)
+            return;
         
-        // Check for ground coffee being dropped
-        if (groundCoffeeZone != null && groundCoffeeZone.transform.childCount > 0)
+        // Calculate amount to dispense
+        float amountToDispense = grammingRate * Time.deltaTime;
+        amountToDispense = Mathf.Min(amountToDispense, storedCoffeeAmount);
+        
+        if (amountToDispense > 0)
         {
-            GroundCoffeeUI groundCoffee = groundCoffeeZone.transform.GetChild(0).GetComponent<GroundCoffeeUI>();
-            if (groundCoffee != null && currentPortafilter != null)
+            if (!isDispensing)
             {
-                float coffeeAmount = groundCoffee.GetAmount();
-                currentPortafilter.TryAddItem("ground_coffee", coffeeAmount);
-                
-                currentGramming = currentPortafilter.GetItemAmount("ground_coffee");
-                UpdateGramDisplay();
-                UpdateQualityIndicator();
-                
-                // Visual feedback
-                if (coffeeParticles != null)
-                {
-                    coffeeParticles.Play();
-                }
-                
-                // Sound
-                if (coffeeAddSound != null)
-                {
-                    coffeeAddSound.Play();
-                }
-                
-                // Animation
-                if (machineAnimator != null)
-                {
-                    machineAnimator.SetTrigger("AddCoffee");
-                }
-                
-                // Show notification
-                UIManager.Instance.ShowNotification($"Added {coffeeAmount}g of ground coffee");
-                
-                // Destroy the ground coffee object
-                Destroy(groundCoffee.gameObject);
+                isDispensing = true;
+                PlayDispenseEffects();
+            }
+            
+            // Remove from storage
+            storedCoffeeAmount -= amountToDispense;
+            
+            // Add to portafilter
+            currentPortafilter.TryAddItem("ground_coffee", amountToDispense);
+            
+            // Update UI
+            UpdateUI();
+        }
+        else if (storedCoffeeAmount <= 0)
+        {
+            // Stop effects if we're out of coffee
+            StopDispenseEffects();
+            UIManager.Instance.ShowNotification("Out of ground coffee!");
+        }
+    }
+    
+    private void OnGrammingButtonRelease(float heldDuration)
+    {
+        isDispensing = false;
+        StopDispenseEffects();
+        
+        // Provide feedback on current coffee quality
+        if (currentPortafilter != null)
+        {
+            float coffeeAmount = currentPortafilter.GetItemAmount("ground_coffee");
+            float quality = qualityEvaluator.EvaluateQuality(coffeeAmount);
+            string qualityDesc = qualityEvaluator.GetQualityDescription(quality);
+            
+            // Only show notification if we actually dispensed some coffee
+            if (heldDuration > 0.1f && coffeeAmount > 0)
+            {
+                UIManager.Instance.ShowNotification($"{qualityDesc} coffee weight: {coffeeAmount:F1}g");
             }
         }
     }
     
-    private void OnGrammingHold(float duration)
+    #region ICoffeeContainer Implementation
+    
+    /// <summary>
+    /// Add coffee to the machine's internal storage
+    /// </summary>
+    public bool TryAddCoffee(float amount)
     {
-        if (currentPortafilter == null || currentGramming <= 0)
-            return;
+        if (amount <= 0)
+            return false;
+            
+        // Check if adding would exceed capacity
+        if (storedCoffeeAmount + amount > maxStorageCapacity)
+        {
+            float actualAmount = maxStorageCapacity - storedCoffeeAmount;
+            storedCoffeeAmount = maxStorageCapacity;
+            
+            UpdateUI();
+            UIManager.Instance.ShowNotification($"Added {actualAmount:F1}g to machine storage. Storage full!");
+            return false; // Couldn't add full amount
+        }
         
-        // Visual feedback
+        storedCoffeeAmount += amount;
+        UpdateUI();
+        UIManager.Instance.ShowNotification($"Added {amount:F1}g to machine storage. Total: {storedCoffeeAmount:F1}g");
+        return true;
+    }
+    
+    public bool TryRemoveCoffee(float amount)
+    {
+        if (amount <= 0 || storedCoffeeAmount < amount)
+            return false;
+            
+        storedCoffeeAmount -= amount;
+        UpdateUI();
+        return true;
+    }
+    
+    public float GetCoffeeAmount()
+    {
+        return storedCoffeeAmount;
+    }
+    
+    public bool HasCoffee(float minAmount = 0f)
+    {
+        return storedCoffeeAmount >= minAmount;
+    }
+    
+    #endregion
+    
+    #region Effects
+    
+    private void PlayDispenseEffects()
+    {
         if (coffeeParticles != null && !coffeeParticles.isPlaying)
         {
             coffeeParticles.Play();
         }
         
-        // Sound
-        if (tampingSound != null && !tampingSound.isPlaying)
+        if (coffeeDispenseSound != null && !coffeeDispenseSound.isPlaying)
         {
-            tampingSound.Play();
+            coffeeDispenseSound.Play();
         }
         
-        // Animation
         if (machineAnimator != null)
         {
-            machineAnimator.SetBool("Tamping", true);
-        }
-        
-        // Adjust the coffee amount (tamp it down - reduce amount)
-        float tamperStrength = Mathf.Lerp(0.1f, 0.5f, Mathf.Clamp01(duration / 3f));
-        float gramReduction = grammingRate * Time.deltaTime * tamperStrength;
-        
-        // Don't let it go below a minimum threshold
-        if (currentGramming - gramReduction >= 1f)
-        {
-            currentGramming -= gramReduction;
-            currentPortafilter.TryRemoveItem("ground_coffee", gramReduction);
-            
-            // Update the display with current weight
-            UpdateGramDisplay();
-            UpdateQualityIndicator();
+            machineAnimator.SetBool("Dispensing", true);
         }
     }
     
-    private void OnGrammingRelease(float heldDuration)
+    private void StopDispenseEffects()
     {
         if (coffeeParticles != null)
         {
             coffeeParticles.Stop();
         }
         
-        if (tampingSound != null && tampingSound.isPlaying)
+        if (coffeeDispenseSound != null && coffeeDispenseSound.isPlaying)
         {
-            tampingSound.Stop();
+            coffeeDispenseSound.Stop();
         }
         
         if (machineAnimator != null)
         {
-            machineAnimator.SetBool("Tamping", false);
+            machineAnimator.SetBool("Dispensing", false);
         }
-        
-        // Finalize the gramming process
-        if (currentPortafilter != null)
+    }
+    
+    #endregion
+    
+    #region UI Updates
+    
+    private void UpdateUI()
+    {
+        UpdatePortafilterText();
+        UpdateStorageText();
+        UpdateQualityIndicator();
+    }
+    
+    private void UpdatePortafilterText()
+    {
+        if (portafilterGramText != null)
         {
-            // Provide feedback based on coffee amount
-            float quality = GetQualityFactor();
-            
-            if (quality > 0.9f)
+            if (currentPortafilter != null)
             {
-                UIManager.Instance.ShowNotification("Perfect tamping!");
-            }
-            else if (quality > 0.7f)
-            {
-                UIManager.Instance.ShowNotification("Good tamping");
-            }
-            else if (quality > 0.5f)
-            {
-                UIManager.Instance.ShowNotification("Acceptable tamping");
+                float coffeeAmount = currentPortafilter.GetItemAmount("ground_coffee");
+                portafilterGramText.text = $"{coffeeAmount:F1}g";
             }
             else
             {
-                UIManager.Instance.ShowNotification("Poor tamping");
+                portafilterGramText.text = "No Portafilter";
             }
         }
     }
     
-    private float GetQualityFactor()
+    private void UpdateStorageText()
     {
-        float deviation = Mathf.Abs(currentGramming - idealGramAmount);
-        
-        if (deviation <= gramTolerance)
+        if (storageGramText != null)
         {
-            return 1f; // Perfect
-        }
-        
-        float maxDeviation = idealGramAmount * 0.5f; // 50% off is worst case
-        return 1f - Mathf.Clamp01(deviation / maxDeviation);
-    }
-    
-    private void UpdateGramDisplay()
-    {
-        if (gramDisplayText != null)
-        {
-            gramDisplayText.text = $"{currentGramming:F1}g";
+            storageGramText.text = $"Storage: {storedCoffeeAmount:F1}g";
         }
     }
     
     private void UpdateQualityIndicator()
     {
-        if (qualityIndicator != null)
+        // ...existing code remains unchanged...
+        if (qualityIndicator == null) return;
+        
+        if (currentPortafilter != null)
         {
-            float quality = GetQualityFactor();
+            float coffeeAmount = currentPortafilter.GetItemAmount("ground_coffee");
+            float quality = qualityEvaluator.EvaluateQuality(coffeeAmount);
             qualityIndicator.color = qualityGradient.Evaluate(quality);
             
-            // Also show how close to ideal weight
             float fillAmount = 0f;
             
-            if (currentGramming > 0)
+            if (coffeeAmount > 0)
             {
-                // Calculate how close to ideal
-                if (currentGramming <= idealGramAmount)
+                if (coffeeAmount <= idealGramAmount)
                 {
-                    fillAmount = currentGramming / idealGramAmount;
+                    fillAmount = coffeeAmount / idealGramAmount;
                 }
                 else
                 {
-                    // Over ideal
                     float overFillRange = idealGramAmount * 1.5f - idealGramAmount;
-                    float overAmount = currentGramming - idealGramAmount;
-                    fillAmount = 1f - (overAmount / overFillRange) * 0.5f; // Start decreasing
+                    float overAmount = coffeeAmount - idealGramAmount;
+                    fillAmount = 1f - (overAmount / overFillRange) * 0.5f;
                 }
             }
             
             qualityIndicator.fillAmount = fillAmount;
+            qualityIndicator.gameObject.SetActive(true);
+        }
+        else
+        {
+            qualityIndicator.color = Color.white;
+            qualityIndicator.fillAmount = storedCoffeeAmount / maxStorageCapacity;
+            qualityIndicator.gameObject.SetActive(storedCoffeeAmount > 0);
         }
     }
     
-    // Method to manually connect to portafilterZone's OnDrop event in inspector
+    #endregion
+    
+    #region DropZone Event Handlers
+    
+    /// <summary>
+    /// Called when a portafilter is dropped in the portafilter zone
+    /// </summary>
     public void OnPortafilterDropped(DraggableUI item)
     {
         if (item is Portafilter portafilter)
         {
             currentPortafilter = portafilter;
-            currentGramming = portafilter.GetItemAmount("ground_coffee");
-            UpdateGramDisplay();
-            UpdateQualityIndicator();
-            
+            UpdateUI();
             UIManager.Instance.ShowNotification("Portafilter placed in gramming machine");
         }
     }
     
-    // Method to manually connect to portafilterZone's OnItemRemoved event in inspector
+    /// <summary>
+    /// Called when a portafilter is removed from the portafilter zone
+    /// </summary>
     public void OnPortafilterRemoved(DraggableUI item)
     {
         if (item is Portafilter)
         {
             currentPortafilter = null;
-            currentGramming = 0f;
-            UpdateGramDisplay();
-            UpdateQualityIndicator();
+            UpdateUI();
         }
     }
     
-    // Method to manually connect to groundCoffeeZone's OnDrop event in inspector
+    /// <summary>
+    /// Called when ground coffee is dropped in the ground coffee zone
+    /// </summary>
     public void OnGroundCoffeeDropped(DraggableUI item)
     {
-        if (item is GroundCoffeeUI groundCoffee && currentPortafilter != null)
+        if (item is GroundCoffeeUI groundCoffee)
         {
             float coffeeAmount = groundCoffee.GetAmount();
-            currentPortafilter.TryAddItem("ground_coffee", coffeeAmount);
             
-            currentGramming = currentPortafilter.GetItemAmount("ground_coffee");
-            UpdateGramDisplay();
-            UpdateQualityIndicator();
+            // Add to storage instead of directly to portafilter
+            TryAddCoffee(coffeeAmount);
             
             // Visual feedback
             if (coffeeParticles != null)
             {
                 coffeeParticles.Play();
+                Invoke("StopParticles", 1.0f); // Stop particles after a delay
             }
             
-            // Show notification
-            UIManager.Instance.ShowNotification($"Added {coffeeAmount}g of ground coffee");
+            // Sound
+            if (coffeeAddSound != null)
+            {
+                coffeeAddSound.Play();
+            }
+            
+            // Animation
+            if (machineAnimator != null)
+            {
+                machineAnimator.SetTrigger("AddCoffee");
+            }
             
             // Destroy the ground coffee object
             Destroy(groundCoffee.gameObject);
         }
     }
+    
+    private void StopParticles()
+    {
+        if (coffeeParticles != null && !isDispensing)
+        {
+            coffeeParticles.Stop();
+        }
+    }
+    
+    #endregion
 }
