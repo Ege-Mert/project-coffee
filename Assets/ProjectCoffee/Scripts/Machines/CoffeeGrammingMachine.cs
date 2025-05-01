@@ -12,20 +12,13 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     [SerializeField] private DropZone portafilterZone;
     [SerializeField] private DropZone groundCoffeeZone;
     [SerializeField] private Holdable grammingButton;
-    // Removed the single display field:
-    // [SerializeField] private TMP_Text gramDisplayText;
-    // Added separate texts for portafilter grammage and storage amount
     [SerializeField] private TMP_Text portafilterGramText;
     [SerializeField] private TMP_Text storageGramText;
-    
     [SerializeField] private Image qualityIndicator;
     [SerializeField] private Gradient qualityGradient;
     
-    [Header("Settings")]
-    [SerializeField] private float grammingRate = 2f; // Grams per second when dispensing
-    [SerializeField] private float idealGramAmount = 18f;
-    [SerializeField] private float gramTolerance = 1f; // +/- grams for "perfect" range
-    [SerializeField] private float maxStorageCapacity = 100f; // Maximum coffee storage
+    [Header("Configuration")]
+    [SerializeField] private GrammingMachineConfig config;
     
     [Header("Effects")]
     [SerializeField] private ParticleSystem coffeeParticles;
@@ -38,10 +31,20 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     private float storedCoffeeAmount = 0f; // Internal coffee storage
     private CoffeeQualityEvaluator qualityEvaluator;
     private bool isDispensing = false;
+    private int currentUpgradeLevel = 0;
     
     private void Awake()
     {
-        qualityEvaluator = new CoffeeQualityEvaluator(idealGramAmount, gramTolerance);
+        // Validate config
+        if (config == null)
+        {
+            Debug.LogError("GrammingMachineConfig is not assigned! Using default values.");
+            qualityEvaluator = new CoffeeQualityEvaluator(18f, 1f); // Default values
+        }
+        else
+        {
+            qualityEvaluator = new CoffeeQualityEvaluator(config.idealGramAmount, config.gramTolerance);
+        }
     }
     
     private void Start()
@@ -85,6 +88,12 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     private void Update()
     {
         CheckPortafilterPresence();
+        
+        // Auto-dose at level 2 if conditions are met
+        if (currentUpgradeLevel == 2 && config != null)
+        {
+            // Level 2 auto-detection logic will be implemented here
+        }
     }
     
     private void CheckPortafilterPresence()
@@ -100,6 +109,12 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
                 currentPortafilter = portafilter;
                 UpdateUI();
                 UIManager.Instance.ShowNotification("Portafilter placed in gramming machine");
+                
+                // Auto-dose at level 1 if conditions are met
+                if (currentUpgradeLevel == 1 && config != null && storedCoffeeAmount > 0 && !isDispensing)
+                {
+                    // Will be implemented later - level 1 auto dose
+                }
             }
         }
         // Detect when portafilter is removed
@@ -115,8 +130,11 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
         if (currentPortafilter == null || storedCoffeeAmount <= 0)
             return;
         
+        // Get rate from config or use default
+        float rate = config != null ? config.grammingRate : 2f;
+        
         // Calculate amount to dispense
-        float amountToDispense = grammingRate * Time.deltaTime;
+        float amountToDispense = rate * Time.deltaTime;
         amountToDispense = Mathf.Min(amountToDispense, storedCoffeeAmount);
         
         if (amountToDispense > 0)
@@ -174,11 +192,14 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
         if (amount <= 0)
             return false;
             
+        // Get capacity from config or use default
+        float maxCapacity = config != null ? config.maxStorageCapacity : 100f;
+            
         // Check if adding would exceed capacity
-        if (storedCoffeeAmount + amount > maxStorageCapacity)
+        if (storedCoffeeAmount + amount > maxCapacity)
         {
-            float actualAmount = maxStorageCapacity - storedCoffeeAmount;
-            storedCoffeeAmount = maxStorageCapacity;
+            float actualAmount = maxCapacity - storedCoffeeAmount;
+            storedCoffeeAmount = maxCapacity;
             
             UpdateUI();
             UIManager.Instance.ShowNotification($"Added {actualAmount:F1}g to machine storage. Storage full!");
@@ -288,7 +309,6 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     
     private void UpdateQualityIndicator()
     {
-        // ...existing code remains unchanged...
         if (qualityIndicator == null) return;
         
         if (currentPortafilter != null)
@@ -297,18 +317,19 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             float quality = qualityEvaluator.EvaluateQuality(coffeeAmount);
             qualityIndicator.color = qualityGradient.Evaluate(quality);
             
+            float idealAmount = config != null ? config.idealGramAmount : 18f;
             float fillAmount = 0f;
             
             if (coffeeAmount > 0)
             {
-                if (coffeeAmount <= idealGramAmount)
+                if (coffeeAmount <= idealAmount)
                 {
-                    fillAmount = coffeeAmount / idealGramAmount;
+                    fillAmount = coffeeAmount / idealAmount;
                 }
                 else
                 {
-                    float overFillRange = idealGramAmount * 1.5f - idealGramAmount;
-                    float overAmount = coffeeAmount - idealGramAmount;
+                    float overFillRange = idealAmount * 1.5f - idealAmount;
+                    float overAmount = coffeeAmount - idealAmount;
                     fillAmount = 1f - (overAmount / overFillRange) * 0.5f;
                 }
             }
@@ -318,8 +339,9 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
         }
         else
         {
+            float maxCapacity = config != null ? config.maxStorageCapacity : 100f;
             qualityIndicator.color = Color.white;
-            qualityIndicator.fillAmount = storedCoffeeAmount / maxStorageCapacity;
+            qualityIndicator.fillAmount = storedCoffeeAmount / maxCapacity;
             qualityIndicator.gameObject.SetActive(storedCoffeeAmount > 0);
         }
     }
@@ -400,4 +422,14 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     }
     
     #endregion
+    
+    /// <summary>
+    /// Set the upgrade level of the machine
+    /// </summary>
+    public void SetUpgradeLevel(int level)
+    {
+        currentUpgradeLevel = level;
+        
+        // Additional upgrade-specific logic will be implemented later
+    }
 }
