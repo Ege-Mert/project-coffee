@@ -12,7 +12,7 @@ public class GroundCoffee : Draggable
     [Header("Coffee Settings")]
     [SerializeField] private List<Sprite> grindStageSprites;
     [SerializeField] private Image coffeeImage;
-    [SerializeField] private float[] stageAmounts = { 6f, 12f, 18f }; // Grams per stage
+    [SerializeField] private float[] stageAmounts = { 6f, 12f, 18f }; // Default values, can be overridden
     
     public enum GrindSize { Small, Medium, Large }
     
@@ -53,8 +53,23 @@ public class GroundCoffee : Draggable
     {
         print($"Setting grind size to {size}");
         currentSize = size;
-        coffeeAmount = stageAmounts[(int)size];
+        
+        // If not explicitly set by CoffeeGrinder, use default values
+        if ((int)size < stageAmounts.Length)
+        {
+            coffeeAmount = stageAmounts[(int)size];
+        }
+        
         UpdateVisual();
+    }
+    
+    /// <summary>
+    /// Set an explicit amount for this ground coffee, overriding the default for the size
+    /// </summary>
+    public void SetAmount(float amount)
+    {
+        coffeeAmount = amount;
+        print($"Set explicit coffee amount to {coffeeAmount}g");
     }
     
     public void UpgradeSize()
@@ -64,7 +79,13 @@ public class GroundCoffee : Draggable
         if (currentSize < GrindSize.Large)
         {
             currentSize = (GrindSize)((int)currentSize + 1);
-            coffeeAmount = stageAmounts[(int)currentSize];
+            
+            // If not explicitly set, use default values
+            if ((int)currentSize < stageAmounts.Length)
+            {
+                coffeeAmount = stageAmounts[(int)currentSize];
+            }
+            
             UpdateVisual();
             
             // Animate growth

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6491edc6eb5090d41895aa80e817b0ed, type: 3}
+  m_Name: GrinderConfig
+  m_EditorClassIdentifier: 
+  machineId: Grinder_01
+  displayName: Grinder
+  maxUpgradeLevel: 2
+  baseProcessTime: 3
+  upgradeLevels:
+  - upgradeName: 
+    description: 
+    upgradeCost: 0
+    processTimeMultiplier: 0
+    interactionType: 0
+    upgradeIcon: {fileID: 0}
+  maxBeanFills: 3
+  spinsPerStage: 1
+  groundCoffeeSizes:
+  - 6
+  - 12
+  - 18
+  level0SpinsRequired: 3
+  level1GrindTime: 3
+  level2AutoCheckInterval: 1

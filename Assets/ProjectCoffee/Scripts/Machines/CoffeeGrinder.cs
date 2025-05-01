@@ -16,9 +16,8 @@ public class CoffeeGrinder : MonoBehaviour
     [SerializeField] private GroundCoffeeOutputZone groundCoffeeOutputZone;
     [SerializeField] private GameObject groundCoffeePrefab;
     
-    [Header("Settings")]
-    [SerializeField] private int maxBeanFills = 3;
-    [SerializeField] private int spinsPerStage = 1;
+    [Header("Configuration")]
+    [SerializeField] private GrinderConfig config;
     [SerializeField] private bool keepHandleAlwaysVisible = true;
     
     // [Header("Effects")]
@@ -27,6 +26,7 @@ public class CoffeeGrinder : MonoBehaviour
     // [SerializeField] private Animator grinderAnimator;
     
     // State variables
+    private int currentUpgradeLevel = 0;
     private int currentBeanFills = 0;
     private int spinsSinceLastUpgrade = 0;
     private GroundCoffee currentGroundCoffee;
@@ -36,6 +36,13 @@ public class CoffeeGrinder : MonoBehaviour
     {
         // Force Unity to print these messages to console
         print("CoffeeGrinderUI Awake called");
+        
+        // Validate config
+        if (config == null)
+        {
+            Debug.LogError("GrinderConfig is not assigned! Please assign a config in the inspector.");
+        }
+        
         if (groundCoffeePrefab == null)
         {
             print("ERROR: Ground Coffee Prefab is not assigned!");
@@ -90,11 +97,13 @@ public class CoffeeGrinder : MonoBehaviour
     
     public void AddBeans(int amount)
     {
-        print($">>> AddBeans({amount}) called. Current beans: {currentBeanFills}, Max: {maxBeanFills}");
+        print($">>> AddBeans({amount}) called. Current beans: {currentBeanFills}, Max: {config.maxBeanFills}");
         
-        if (currentBeanFills < maxBeanFills)
+        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
+        
+        if (currentBeanFills < maxFills)
         {
-            int newAmount = Mathf.Min(currentBeanFills + amount, maxBeanFills);
+            int newAmount = Mathf.Min(currentBeanFills + amount, maxFills);
             print($"Adding beans. Current: {currentBeanFills} -> New: {newAmount}");
             currentBeanFills = newAmount;
             
@@ -107,20 +116,22 @@ public class CoffeeGrinder : MonoBehaviour
             }
             
             // Test direct access to variables
-            print($"After adding - Bean count: {currentBeanFills}, Max: {maxBeanFills}");
+            print($"After adding - Bean count: {currentBeanFills}, Max: {maxFills}");
             
-            UIManager.Instance.ShowNotification($"Added beans. Total: {currentBeanFills}/{maxBeanFills}");
+            UIManager.Instance.ShowNotification($"Added beans. Total: {currentBeanFills}/{maxFills}");
         }
         else
         {
-            print($"Grinder already full. Current: {currentBeanFills}, Max: {maxBeanFills}");
+            print($"Grinder already full. Current: {currentBeanFills}, Max: {maxFills}");
             UIManager.Instance.ShowNotification("Grinder is full of beans!");
         }
     }
     
     private void OnHandleSpinCompleted(int spinCount)
     {
-        print($">>> Handle spin completed. Spins: {spinsSinceLastUpgrade + 1}, Required: {spinsPerStage}, Beans: {currentBeanFills}");
+        int spinsNeeded = config != null ? config.spinsPerStage : 1; // Fallback if config missing
+        
+        print($">>> Handle spin completed. Spins: {spinsSinceLastUpgrade + 1}, Required: {spinsNeeded}, Beans: {currentBeanFills}");
         
         spinsSinceLastUpgrade++;
         
@@ -144,10 +155,10 @@ public class CoffeeGrinder : MonoBehaviour
         // }
         
         // Debug output regardless of bean count
-        print($"Spin progress: {spinsSinceLastUpgrade}/{spinsPerStage} with {currentBeanFills} beans");
+        print($"Spin progress: {spinsSinceLastUpgrade}/{spinsNeeded} with {currentBeanFills} beans");
         
         // Check if we have enough spins to process grinding
-        if (spinsSinceLastUpgrade >= spinsPerStage && currentBeanFills > 0 && !isProcessingGrinding)
+        if (spinsSinceLastUpgrade >= spinsNeeded && currentBeanFills > 0 && !isProcessingGrinding)
         {
             print("Enough spins accumulated. Processing grinding...");
             ProcessGrinding();
@@ -308,6 +319,28 @@ public class CoffeeGrinder : MonoBehaviour
             print($"Setting grind size to {size}");
             currentGroundCoffee.SetGrindSize(size);
             
+            // Use the config values for ground coffee amounts if available
+            if (config != null && currentGroundCoffee != null)
+            {
+                float amountBySize = 6f; // Default fallback value
+                
+                switch (size)
+                {
+                    case GroundCoffee.GrindSize.Small:
+                        amountBySize = config.groundCoffeeSizes.Length > 0 ? config.groundCoffeeSizes[0] : 6f;
+                        break;
+                    case GroundCoffee.GrindSize.Medium:
+                        amountBySize = config.groundCoffeeSizes.Length > 1 ? config.groundCoffeeSizes[1] : 12f;
+                        break;
+                    case GroundCoffee.GrindSize.Large:
+                        amountBySize = config.groundCoffeeSizes.Length > 2 ? config.groundCoffeeSizes[2] : 18f;
+                        break;
+                }
+                
+                // Set the amount on the ground coffee
+                currentGroundCoffee.SetAmount(amountBySize);
+            }
+            
             // Position properly
             RectTransform coffeeRect = coffeeObj.GetComponent<RectTransform>();
             if (coffeeRect != null)
@@ -340,11 +373,13 @@ public class CoffeeGrinder : MonoBehaviour
     
     private void UpdateBeansVisual()
     {
-        print($"Updating beans visual. Current: {currentBeanFills}, Max: {maxBeanFills}");
+        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
+        
+        print($"Updating beans visual. Current: {currentBeanFills}, Max: {maxFills}");
         
         if (beansLevelImage != null)
         {
-            float fillAmount = (float)currentBeanFills / maxBeanFills;
+            float fillAmount = (float)currentBeanFills / maxFills;
             print($"Setting fill amount to {fillAmount}");
             beansLevelImage.fillAmount = fillAmount;
         }
@@ -360,7 +395,7 @@ public class CoffeeGrinder : MonoBehaviour
         currentGroundCoffee = null;
     }
     
-    // For debuggering - add a test button to call this
+    // For debugging - add a test button to call this
     public void TestAddBean()
     {
         print("Test button: Adding 1 bean");
@@ -370,7 +405,17 @@ public class CoffeeGrinder : MonoBehaviour
     // For debugging - shows how many beans are currently in the grinder
     public void DebugShowBeanCount()
     {
+        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
         print($"DEBUG: Current bean count is {currentBeanFills}");
-        UIManager.Instance.ShowNotification($"Bean count: {currentBeanFills}/{maxBeanFills}");
+        UIManager.Instance.ShowNotification($"Bean count: {currentBeanFills}/{maxFills}");
+    }
+    
+    // Support for upgrades
+    public void SetUpgradeLevel(int level)
+    {
+        currentUpgradeLevel = level;
+        
+        // Additional logic for handling upgrade levels will be added later
+        // This is just the placeholder for the upgrade system
     }
 }

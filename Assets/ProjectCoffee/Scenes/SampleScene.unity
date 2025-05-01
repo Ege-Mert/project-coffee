@@ -778,10 +778,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 3
     m_NumAlphaKeys: 2
-  grammingRate: 6
-  idealGramAmount: 18
-  gramTolerance: 1
-  maxStorageCapacity: 100
+  config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
   coffeeParticles: {fileID: 0}
   coffeeAddSound: {fileID: 0}
   coffeeDispenseSound: {fileID: 0}
@@ -3953,8 +3950,7 @@ MonoBehaviour:
   grindHandle: {fileID: 1321812441}
   groundCoffeeOutputZone: {fileID: 1136698213}
   groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
-  maxBeanFills: 3
-  spinsPerStage: 1
+  config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
   keepHandleAlwaysVisible: 1
 --- !u!114 &2095772919
 MonoBehaviour:
@@ -4143,8 +4139,7 @@ MonoBehaviour:
     isActive: 0
     brewProgress: 0
   brewButton: {fileID: 755693586}
-  brewingTime: 5
-  shotAmount: 12
+  config: {fileID: 11400000, guid: 18e4f2e467a10f340aa0cf800772580a, type: 2}
   brewingParticles: {fileID: 0}
   brewStartSound: {fileID: 0}
   brewEndSound: {fileID: 0}

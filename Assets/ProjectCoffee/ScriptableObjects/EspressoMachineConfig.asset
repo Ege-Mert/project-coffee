@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42691c15696b2af4682374f150fee521, type: 3}
+  m_Name: EspressoMachineConfig
+  m_EditorClassIdentifier: 
+  machineId: EspressoMachine_01
+  displayName: EspressoMachine
+  maxUpgradeLevel: 2
+  baseProcessTime: 3
+  upgradeLevels:
+  - upgradeName: 
+    description: 
+    upgradeCost: 0
+    processTimeMultiplier: 0
+    interactionType: 1
+    upgradeIcon: {fileID: 0}
+  brewingTime: 5
+  initialSlotCount: 1
+  maxSlotCount: 4
+  coffeeQualityWeight: 0.7
+  temperatureQualityWeight: 0.3
+  level0BrewTime: 5
+  level1BrewTime: 3
+  level2ExtraSlots: 2
+  level2BrewTime: 2

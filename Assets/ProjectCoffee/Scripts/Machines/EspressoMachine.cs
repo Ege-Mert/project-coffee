@@ -19,15 +19,36 @@ public class EspressoMachine : MonoBehaviour
         public float brewProgress = 0f;
     }
     
+    [Header("References")]
     [SerializeField] private List<BrewingSlot> brewingSlots = new List<BrewingSlot>();
     [SerializeField] private BrewButton brewButton;
-    [SerializeField] private float brewingTime = 5f; // Seconds
-    [SerializeField] private float shotAmount = 2f; // Oz of espresso per shot
+    
+    [Header("Configuration")]
+    [SerializeField] private EspressoMachineConfig config;
+    
+    [Header("Effects")]
     [SerializeField] private ParticleSystem brewingParticles;
     [SerializeField] private AudioSource brewStartSound;
     [SerializeField] private AudioSource brewEndSound;
     [SerializeField] private AudioSource brewingSound;
     [SerializeField] private Animator machineAnimator;
+    
+    private int currentUpgradeLevel = 0;
+    private float currentBrewTime;
+    
+    private void Awake()
+    {
+        // Validate config
+        if (config == null)
+        {
+            Debug.LogError("EspressoMachineConfig is not assigned! Using default values.");
+            currentBrewTime = 5f; // Default brew time
+        }
+        else
+        {
+            currentBrewTime = config.level0BrewTime;
+        }
+    }
     
     private void Start()
     {
@@ -100,7 +121,7 @@ public class EspressoMachine : MonoBehaviour
                 continue;
                 
             // Update brewing progress
-            slot.brewProgress += Time.deltaTime / brewingTime;
+            slot.brewProgress += Time.deltaTime / currentBrewTime;
             
             // Update progress fill
             if (slot.progressFill != null)
@@ -269,6 +290,9 @@ public class EspressoMachine : MonoBehaviour
             // Get the quality factor from the portafilter
             float qualityFactor = slot.currentPortafilter.GetCoffeeQualityFactor();
             
+            // Get shot amount from config or use default
+            float shotAmount = config != null ? 2f : 2f; // Using 2oz as default
+            
             // Add espresso to the cup with quality adjusted amount
             float adjustedAmount = shotAmount * Mathf.Lerp(0.7f, 1.2f, qualityFactor);
             Debug.Log($"CompleteBrewing: Adding {adjustedAmount} oz of espresso to cup");
@@ -290,7 +314,9 @@ public class EspressoMachine : MonoBehaviour
                 brewingSound.Stop();
             }
             
-            UIManager.Instance.ShowNotification("Espresso ready!");
+            // Use quality factor for notification
+            string qualityDescription = GetQualityDescription(qualityFactor);
+            UIManager.Instance.ShowNotification($"{qualityDescription} espresso ready!");
         }
         else
         {
@@ -315,6 +341,20 @@ public class EspressoMachine : MonoBehaviour
         {
             machineAnimator.SetTrigger("StopBrew");
         }
+    }
+    
+    private string GetQualityDescription(float qualityFactor)
+    {
+        if (qualityFactor >= 0.9f)
+            return "Perfect";
+        else if (qualityFactor >= 0.7f)
+            return "Excellent";
+        else if (qualityFactor >= 0.5f)
+            return "Good";
+        else if (qualityFactor >= 0.3f)
+            return "Okay";
+        else
+            return "Poor";
     }
     
     // Methods to be connected in the Inspector for drop zones
@@ -357,5 +397,41 @@ public class EspressoMachine : MonoBehaviour
         {
             brewingSlots[slotIndex].currentCup = null;
         }
+    }
+    
+    /// <summary>
+    /// Set the upgrade level of the espresso machine
+    /// </summary>
+    public void SetUpgradeLevel(int level)
+    {
+        if (config == null) return;
+        
+        currentUpgradeLevel = level;
+        
+        // Apply level-specific settings
+        switch (level)
+        {
+            case 0:
+                currentBrewTime = config.level0BrewTime;
+                break;
+                
+            case 1:
+                currentBrewTime = config.level1BrewTime;
+                break;
+                
+            case 2:
+                currentBrewTime = config.level2BrewTime;
+                
+                // Add additional slots if needed
+                if (brewingSlots.Count == 2 && config.level2ExtraSlots > 0)
+                {
+                    // This would be handled differently in a real implementation
+                    // through prefab instantiation or enabling existing slots
+                    Debug.Log("Level 2 upgrade unlocks additional brewing slots!");
+                }
+                break;
+        }
+        
+        Debug.Log($"Espresso machine upgraded to level {level}. New brew time: {currentBrewTime}s");
     }
 }
