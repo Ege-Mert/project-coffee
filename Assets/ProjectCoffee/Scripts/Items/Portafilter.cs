@@ -4,7 +4,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Portafilter for holding ground coffee
 /// </summary>
-public class Portafilter : ContainerUI
+public class Portafilter : Container
 {
     [SerializeField] private Image coffeeImage;
     [SerializeField] private float idealCoffeeGrams = 18f;

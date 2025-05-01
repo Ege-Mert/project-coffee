@@ -4,13 +4,13 @@ using UnityEngine.UI;
 /// <summary>
 /// Espresso machine for brewing coffee
 /// </summary>
-public class EspressoMachineUI : MonoBehaviour
+public class EspressoMachine : MonoBehaviour
 {
     [System.Serializable]
     public class BrewingSlot
     {
-        public DropZoneUI portafilterZone;
-        public DropZoneUI cupZone;
+        public DropZone portafilterZone;
+        public DropZone cupZone;
         public GameObject activeIndicator;
         public Image progressFill;
         public Portafilter currentPortafilter;
@@ -320,7 +320,7 @@ public class EspressoMachineUI : MonoBehaviour
     // Methods to be connected in the Inspector for drop zones
     
     // Called by portafilter drop zone
-    public void OnPortafilterDropped(int slotIndex, DraggableUI item)
+    public void OnPortafilterDropped(int slotIndex, Draggable item)
     {
         if (slotIndex >= 0 && slotIndex < brewingSlots.Count && item is Portafilter portafilter)
         {
@@ -340,7 +340,7 @@ public class EspressoMachineUI : MonoBehaviour
     }
     
     // Called by cup drop zone
-    public void OnCupDropped(int slotIndex, DraggableUI item)
+    public void OnCupDropped(int slotIndex, Draggable item)
     {
         if (slotIndex >= 0 && slotIndex < brewingSlots.Count && item is Cup cup)
         {

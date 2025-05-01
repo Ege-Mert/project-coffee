@@ -8,11 +8,11 @@ using UnityEngine.UI;
 /// <summary>
 /// Coffee grinder for creating ground coffee
 /// </summary>
-public class CoffeeGrinderUI : MonoBehaviour
+public class CoffeeGrinder : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Image beansLevelImage;
-    [SerializeField] private SpinnableUI grindHandle;
+    [SerializeField] private Spinnable grindHandle;
     [SerializeField] private GroundCoffeeOutputZone groundCoffeeOutputZone;
     [SerializeField] private GameObject groundCoffeePrefab;
     
@@ -29,7 +29,7 @@ public class CoffeeGrinderUI : MonoBehaviour
     // State variables
     private int currentBeanFills = 0;
     private int spinsSinceLastUpgrade = 0;
-    private GroundCoffeeUI currentGroundCoffee;
+    private GroundCoffee currentGroundCoffee;
     private bool isProcessingGrinding = false;
     
     private void Awake()
@@ -177,7 +177,7 @@ public class CoffeeGrinderUI : MonoBehaviour
         if (currentGroundCoffee == null)
         {
             print("No current ground coffee found. Creating new ground coffee...");
-            StartCoroutine(CreateGroundCoffee(GroundCoffeeUI.GrindSize.Small));
+            StartCoroutine(CreateGroundCoffee(GroundCoffee.GrindSize.Small));
         }
         // If ground coffee exists, upgrade its size
         else if (currentGroundCoffee != null)
@@ -202,13 +202,13 @@ public class CoffeeGrinderUI : MonoBehaviour
         }
         
         // Get the current size before upgrading (for logging)
-        GroundCoffeeUI.GrindSize oldSize = currentGroundCoffee.GetGrindSize();
+        GroundCoffee.GrindSize oldSize = currentGroundCoffee.GetGrindSize();
         
         // Upgrade the size
         currentGroundCoffee.UpgradeSize();
         
         // Get the new size
-        GroundCoffeeUI.GrindSize newSize = currentGroundCoffee.GetGrindSize();
+        GroundCoffee.GrindSize newSize = currentGroundCoffee.GetGrindSize();
         float amount = currentGroundCoffee.GetAmount();
         
         print($"Upgraded coffee from {oldSize} to {newSize}");
@@ -232,7 +232,7 @@ public class CoffeeGrinderUI : MonoBehaviour
         isProcessingGrinding = false;
     }
     
-    private IEnumerator CreateGroundCoffee(GroundCoffeeUI.GrindSize size)
+    private IEnumerator CreateGroundCoffee(GroundCoffee.GrindSize size)
     {
         print("Creating ground coffee...");
         
@@ -267,11 +267,11 @@ public class CoffeeGrinderUI : MonoBehaviour
             }
             
             // Get and initialize the component
-            currentGroundCoffee = coffeeObj.GetComponent<GroundCoffeeUI>();
+            currentGroundCoffee = coffeeObj.GetComponent<GroundCoffee>();
             
             if (currentGroundCoffee == null)
             {
-                print("ERROR: Ground coffee prefab does not have a GroundCoffeeUI component!");
+                print("ERROR: Ground coffee prefab does not have a GroundCoffee component!");
                 Destroy(coffeeObj);
                 isProcessingGrinding = false;
                 yield break;
@@ -284,10 +284,10 @@ public class CoffeeGrinderUI : MonoBehaviour
                 print($"Found parent canvas: {parentCanvas.name}");
                 
                 // Update draggable UI reference directly
-                DraggableUI draggable = coffeeObj.GetComponent<DraggableUI>();
+                Draggable draggable = coffeeObj.GetComponent<Draggable>();
                 if (draggable != null)
                 {
-                    var field = typeof(DraggableUI).GetField("parentCanvas", 
+                    var field = typeof(Draggable).GetField("parentCanvas", 
                         System.Reflection.BindingFlags.Instance | 
                         System.Reflection.BindingFlags.NonPublic | 
                         System.Reflection.BindingFlags.Public);

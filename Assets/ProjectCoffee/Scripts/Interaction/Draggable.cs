@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Base class for draggable UI elements
 /// </summary>
-public class DraggableUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IInteractiveElement
+public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IInteractiveElement
 {
     [SerializeField] protected bool returnToOriginalPositionOnFail = true;
     [SerializeField] protected Canvas parentCanvas;
@@ -160,7 +160,7 @@ public class DraggableUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         // Check if dropped on a drop zone
         if (eventData.pointerCurrentRaycast.gameObject != null)
         {
-            DropZoneUI dropZone = eventData.pointerCurrentRaycast.gameObject.GetComponent<DropZoneUI>();
+            DropZone dropZone = eventData.pointerCurrentRaycast.gameObject.GetComponent<DropZone>();
             
             if (dropZone != null && dropZone.CanAccept(this))
             {

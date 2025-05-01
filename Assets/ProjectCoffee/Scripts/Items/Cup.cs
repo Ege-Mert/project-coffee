@@ -4,7 +4,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Cup for the final drink
 /// </summary>
-public class Cup : ContainerUI
+public class Cup : Container
 {
     [SerializeField] private Image fillImage;
     [SerializeField] private Color emptyColor = Color.white;

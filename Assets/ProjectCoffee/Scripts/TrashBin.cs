@@ -3,9 +3,9 @@ using UnityEngine;
 /// <summary>
 /// Simple trash bin implementation for testing
 /// </summary>
-public class TrashBinUI : MonoBehaviour
+public class TrashBin : MonoBehaviour
 {
-    [SerializeField] private DropZoneUI trashZone;
+    [SerializeField] private DropZone trashZone;
     [SerializeField] private AudioSource trashSound;
     [SerializeField] private ParticleSystem trashParticles;
     [SerializeField] private Animator trashAnimator;
@@ -23,7 +23,7 @@ public class TrashBinUI : MonoBehaviour
     }
     
     // Connect this method to the trashZone's OnDrop event in the inspector
-    public void OnItemTrashed(DraggableUI item)
+    public void OnItemTrashed(Draggable item)
     {
         // Visual and audio feedback
         if (trashSound != null)

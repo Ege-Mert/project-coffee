@@ -7,9 +7,9 @@ using UnityEngine.UI;
 /// <summary>
 /// Coffee bean bag for adding beans to grinder
 /// </summary>
-public class CoffeeBeanBagUI : ClickableUI
+public class CoffeeBeanBag : Clickable
 {
-    [SerializeField] private CoffeeGrinderUI targetGrinder;
+    [SerializeField] private CoffeeGrinder targetGrinder;
     [SerializeField] private int beansPerClick = 1;
     // [SerializeField] private ParticleSystem beanParticles;
     // [SerializeField] private AudioSource beanPourSound;

@@ -88,9 +88,10 @@ GameObject:
   - component: {fileID: 611656430858844577}
   - component: {fileID: 6097645793207691010}
   - component: {fileID: 3351764204946869769}
-  - component: {fileID: 1903578913493157945}
-  - component: {fileID: 8857296310815135400}
   - component: {fileID: 6400370920529631890}
+  - component: {fileID: 8347848068681921236}
+  - component: {fileID: 5844473600971095992}
+  - component: {fileID: 7709392616786476516}
   m_Layer: 5
   m_Name: Portafilter
   m_TagString: Untagged
@@ -216,7 +217,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!223 &1903578913493157945
+--- !u!114 &6400370920529631890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7785539078771781762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!223 &8347848068681921236
 Canvas:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -239,7 +257,7 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 2
   m_TargetDisplay: 0
---- !u!114 &8857296310815135400
+--- !u!114 &5844473600971095992
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -262,7 +280,7 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
---- !u!114 &6400370920529631890
+--- !u!114 &7709392616786476516
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

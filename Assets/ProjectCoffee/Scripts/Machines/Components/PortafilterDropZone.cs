@@ -3,11 +3,11 @@ using UnityEngine;
 /// <summary>
 /// Advanced drop zone specifically for portafilters
 /// </summary>
-public class PortafilterDropZone : DropZoneUI 
+public class PortafilterDropZone : DropZone
 {
-    [SerializeField] private CoffeeGrammingMachineUI parentMachine;
+    [SerializeField] private CoffeeGrammingMachine parentMachine;
     
-    public override bool CanAccept(DraggableUI item)
+    public override bool CanAccept(Draggable item)
     {
         if (!base.CanAccept(item))
             return false;
@@ -15,7 +15,7 @@ public class PortafilterDropZone : DropZoneUI
         return item is Portafilter;
     }
     
-    public override void OnItemDropped(DraggableUI item)
+    public override void OnItemDropped(Draggable item)
     {
         base.OnItemDropped(item);
         

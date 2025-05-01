@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Base class for containers that hold ingredients
 /// </summary>
-public class ContainerUI : DraggableUI, IContainer
+public class Container : Draggable, IContainer
 {
     protected Dictionary<string, float> contents = new Dictionary<string, float>();
     

@@ -7,12 +7,12 @@ using UnityEngine.UI;
 /// <summary>
 /// Extended drop zone specifically for ground coffee output
 /// </summary>
-public class GroundCoffeeOutputZone : DropZoneUI
+public class GroundCoffeeOutputZone : DropZone
 {
-    [SerializeField] private CoffeeGrinderUI parentGrinder;
+    [SerializeField] private CoffeeGrinder parentGrinder;
     
     // Allow setting the parent grinder from code
-    public void SetParentGrinder(CoffeeGrinderUI grinder)
+    public void SetParentGrinder(CoffeeGrinder grinder)
     {
         if (parentGrinder == null)
         {
@@ -21,10 +21,10 @@ public class GroundCoffeeOutputZone : DropZoneUI
         }
     }
     
-    public override bool CanAccept(DraggableUI item)
+    public override bool CanAccept(Draggable item)
     {
         // IMPORTANT CHANGE: Allow accepting ground coffee items
-        if (item is GroundCoffeeUI)
+        if (item is GroundCoffee)
         {
             return true;
         }
@@ -44,7 +44,7 @@ public class GroundCoffeeOutputZone : DropZoneUI
         }
     }
     
-    public override void OnItemDropped(DraggableUI item)
+    public override void OnItemDropped(Draggable item)
     {
         print($"Item dropped on output zone: {item.name}");
         
@@ -52,19 +52,19 @@ public class GroundCoffeeOutputZone : DropZoneUI
         base.OnItemDropped(item);
         
         // Handle special case of ground coffee
-        if (item is GroundCoffeeUI && parentGrinder != null)
+        if (item is GroundCoffee && parentGrinder != null)
         {
             // If we need any special handling when coffee is placed here
         }
     }
     
-    public override void OnItemRemoved(DraggableUI item)
+    public override void OnItemRemoved(Draggable item)
     {
         print($"Item removed from ground coffee output zone: {item.name}");
         
         base.OnItemRemoved(item);
         
-        if (item is GroundCoffeeUI && parentGrinder != null)
+        if (item is GroundCoffee && parentGrinder != null)
         {
             print("Notifying parent grinder that ground coffee was removed");
             parentGrinder.OnGroundCoffeeRemoved();

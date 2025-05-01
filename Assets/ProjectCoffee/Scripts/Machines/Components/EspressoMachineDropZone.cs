@@ -4,13 +4,13 @@ using UnityEngine.UI;
 /// <summary>
 /// Helper class for espresso machine drop zones
 /// </summary>
-public class EspressoMachineDropZone : DropZoneUI
+public class EspressoMachineDropZone : DropZone
 {
-    [SerializeField] private EspressoMachineUI parentMachine;
+    [SerializeField] private EspressoMachine parentMachine;
     [SerializeField] private int slotIndex;
     [SerializeField] private bool isPortafilterZone; // True for portafilter, false for cup
     
-    public override bool CanAccept(DraggableUI item)
+    public override bool CanAccept(Draggable item)
     {
         if (!base.CanAccept(item))
             return false;
@@ -25,7 +25,7 @@ public class EspressoMachineDropZone : DropZoneUI
         }
     }
     
-    public override void OnItemDropped(DraggableUI item)
+    public override void OnItemDropped(Draggable item)
     {
         base.OnItemDropped(item);
         

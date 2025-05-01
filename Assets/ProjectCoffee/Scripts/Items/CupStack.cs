@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Cup stack for creating new cups
 /// </summary>
-public class CupStackUI : ClickableUI
+public class CupStack : Clickable
 {
     [SerializeField] private GameObject cupPrefab;
     [SerializeField] private Transform cupSpawnPoint;

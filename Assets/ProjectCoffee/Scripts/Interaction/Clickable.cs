@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Base class for clickable UI elements
 /// </summary>
-public class ClickableUI : MonoBehaviour, IPointerClickHandler, IInteractiveElement
+public class Clickable : MonoBehaviour, IPointerClickHandler, IInteractiveElement
 {
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected float clickCooldown = 0.5f;

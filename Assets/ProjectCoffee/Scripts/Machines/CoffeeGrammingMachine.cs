@@ -1,3 +1,4 @@
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,12 +6,12 @@ using UnityEngine.UI;
 /// <summary>
 /// Coffee gramming machine for measuring and dispensing ground coffee
 /// </summary>
-public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
+public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
 {
     [Header("References")]
-    [SerializeField] private DropZoneUI portafilterZone;
-    [SerializeField] private DropZoneUI groundCoffeeZone;
-    [SerializeField] private HoldableUI grammingButton;
+    [SerializeField] private DropZone portafilterZone;
+    [SerializeField] private DropZone groundCoffeeZone;
+    [SerializeField] private Holdable grammingButton;
     // Removed the single display field:
     // [SerializeField] private TMP_Text gramDisplayText;
     // Added separate texts for portafilter grammage and storage amount
@@ -66,7 +67,7 @@ public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
         if (groundCoffeeZone != null)
         {
             // Accept ground coffee regardless of portafilter presence
-            groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffeeUI;
+            groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffee;
         }
     }
     
@@ -330,7 +331,7 @@ public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
     /// <summary>
     /// Called when a portafilter is dropped in the portafilter zone
     /// </summary>
-    public void OnPortafilterDropped(DraggableUI item)
+    public void OnPortafilterDropped(Draggable item)
     {
         if (item is Portafilter portafilter)
         {
@@ -343,7 +344,7 @@ public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
     /// <summary>
     /// Called when a portafilter is removed from the portafilter zone
     /// </summary>
-    public void OnPortafilterRemoved(DraggableUI item)
+    public void OnPortafilterRemoved(Draggable item)
     {
         if (item is Portafilter)
         {
@@ -355,9 +356,9 @@ public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
     /// <summary>
     /// Called when ground coffee is dropped in the ground coffee zone
     /// </summary>
-    public void OnGroundCoffeeDropped(DraggableUI item)
+    public void OnGroundCoffeeDropped(Draggable item)
     {
-        if (item is GroundCoffeeUI groundCoffee)
+        if (item is GroundCoffee groundCoffee)
         {
             float coffeeAmount = groundCoffee.GetAmount();
             
@@ -383,8 +384,10 @@ public class CoffeeGrammingMachineUI : MonoBehaviour, ICoffeeContainer
                 machineAnimator.SetTrigger("AddCoffee");
             }
             
-            // Destroy the ground coffee object
-            Destroy(groundCoffee.gameObject);
+            DOTween.Kill(groundCoffee.transform);
+        
+            // Destroy the object after a short delay
+            Destroy(groundCoffee.gameObject, 0.5f);
         }
     }
     

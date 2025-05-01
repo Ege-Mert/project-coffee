@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class BrewButton : ClickableUI
+public class BrewButton : Clickable
 {
-    [SerializeField] private EspressoMachineUI espressoMachine;
+    [SerializeField] private EspressoMachine espressoMachine;
     
     protected override void OnClick()
     {

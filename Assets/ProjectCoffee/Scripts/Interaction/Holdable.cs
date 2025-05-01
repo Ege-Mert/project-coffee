@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Base class for holdable UI elements
 /// </summary>
-public class HoldableUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IInteractiveElement
+public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IInteractiveElement
 {
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected float maxHoldTime = 5f;

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Class for ground coffee with multiple size stages
 /// </summary>
-public class GroundCoffeeUI : DraggableUI
+public class GroundCoffee : Draggable
 {
     [Header("Coffee Settings")]
     [SerializeField] private List<Sprite> grindStageSprites;

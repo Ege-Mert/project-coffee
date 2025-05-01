@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using System;
 
-public class DropZoneUI : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected List<string> acceptedTypes = new List<string>();
@@ -16,7 +16,7 @@ public class DropZoneUI : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPo
 
     public Func<object, bool> AcceptPredicate { get; set; }
 
-    public virtual bool CanAccept(DraggableUI item)
+    public virtual bool CanAccept(Draggable item)
     {
         if (!isActive)
             return false;
@@ -31,7 +31,7 @@ public class DropZoneUI : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPo
 
         if (eventData.pointerDrag != null)
         {
-            DraggableUI item = eventData.pointerDrag.GetComponent<DraggableUI>();
+            Draggable item = eventData.pointerDrag.GetComponent<Draggable>();
             if (item != null)
             {
                 bool canAccept = CanAccept(item);
@@ -54,18 +54,18 @@ public class DropZoneUI : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPo
 
         if (eventData.pointerDrag != null)
         {
-            DraggableUI item = eventData.pointerDrag.GetComponent<DraggableUI>();
+            Draggable item = eventData.pointerDrag.GetComponent<Draggable>();
         }
     }
 
-    public virtual void OnItemDropped(DraggableUI item)
+    public virtual void OnItemDropped(Draggable item)
     {
         RectTransform itemRect = item.GetComponent<RectTransform>();
         itemRect.SetParent(transform);
         itemRect.anchoredPosition = Vector2.zero;
     }
 
-    public virtual void OnItemRemoved(DraggableUI item)
+    public virtual void OnItemRemoved(Draggable item)
     {
     }
 

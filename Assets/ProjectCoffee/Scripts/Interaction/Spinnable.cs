@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Base class for spinnable UI elements
 /// </summary>
-public class SpinnableUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler, IInteractiveElement
+public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler, IInteractiveElement
 {
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected float requiredSpinAngle = 360f; // One full rotation
