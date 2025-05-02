@@ -14,11 +14,24 @@ public class Cup : Container
     [SerializeField] private AudioSource pourSound;
     
     private float currentFillAmount = 0f;
+    private CupStack sourceStack; // Reference to the stack that created this cup
     
     protected override void Awake()
     {
         base.Awake();
         UpdateVisuals();
+        
+        // Try to find the cup stack that created this cup
+        sourceStack = FindObjectOfType<CupStack>();
+    }
+    
+    private void OnDestroy()
+    {
+        // Notify the cup stack when this cup is destroyed
+        if (sourceStack != null)
+        {
+            sourceStack.OnCupDestroyed();
+        }
     }
     
     public override bool TryAddItem(string itemId, float amount = 1f)
@@ -41,7 +54,7 @@ public class Cup : Container
             UpdateVisuals();
             
             // Play pour sound
-            if (pourSound != null)
+            if (pourSound != null && pourSound.isActiveAndEnabled)
             {
                 pourSound.Play();
             }
@@ -128,5 +141,13 @@ public class Cup : Container
         }
         
         fillImage.color = targetColor;
+    }
+    
+    /// <summary>
+    /// Set the cup stack that spawned this cup
+    /// </summary>
+    public void SetSourceStack(CupStack stack)
+    {
+        sourceStack = stack;
     }
 }

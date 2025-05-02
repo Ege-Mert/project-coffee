@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
-using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 /// <summary>
 /// Base class for holdable UI elements
 /// </summary>
@@ -12,9 +11,9 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     [SerializeField] protected bool isActive = true;
     [SerializeField] protected float maxHoldTime = 5f;
     [SerializeField] protected Image fillIndicator;
-    // [SerializeField] protected AudioSource startHoldSound;
-    // [SerializeField] protected AudioSource endHoldSound;
-    // [SerializeField] protected AudioSource holdingSound;
+    [SerializeField] protected AudioSource startHoldSound;
+    [SerializeField] protected AudioSource endHoldSound;
+    [SerializeField] protected AudioSource holdingSound;
     
     protected bool isHolding = false;
     protected float holdStartTime;
@@ -23,8 +22,19 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     public delegate void HoldHandler(float duration);
     public delegate void HoldReleaseHandler(float duration);
     
+    /// <summary>
+    /// Called every frame while holding, with the current hold duration
+    /// </summary>
     public HoldHandler OnHold;
+    
+    /// <summary>
+    /// Called when hold is released, with the final hold duration
+    /// </summary>
     public HoldReleaseHandler OnHoldRelease;
+    
+    /// <summary>
+    /// Custom function to check if interaction is allowed
+    /// </summary>
     public Func<bool> CanInteract = () => true;
     
     protected virtual void Update()
@@ -40,6 +50,7 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
                 fillIndicator.fillAmount = holdProgress;
             }
             
+            // Call the hold callback
             OnHold?.Invoke(currentHoldDuration);
             
             if (currentHoldDuration >= maxHoldTime)
@@ -59,20 +70,32 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     public virtual void OnInteractionStart()
     {
         // Visual feedback when interaction starts
-        transform.DOScale(0.9f, 0.1f);
+        if (transform != null)
+        {
+            InteractionFeedbackHelper.PlayClickAnimation(transform);
+        }
     }
     
     public virtual void OnInteractionEnd()
     {
         // Visual feedback when interaction ends
-        transform.DOScale(1.0f, 0.1f);
+        if (transform != null)
+        {
+            transform.localScale = Vector3.one; // Ensure scale is reset
+        }
     }
     
     public virtual void OnPointerDown(PointerEventData eventData)
     {
+        // IMPORTANT: Using the explicit interface check instead of our custom function
         if (!((IInteractiveElement)this).CanInteract())
+        {
+            Debug.Log($"Hold prevented on {gameObject.name}: CanInteract returned false");
             return;
-            
+        }
+        
+        Debug.Log($"OnPointerDown on {gameObject.name}, isActive: {isActive}, CustomCheck: {CanInteract()}");
+        
         isHolding = true;
         holdStartTime = Time.time;
         currentHoldDuration = 0f;
@@ -83,15 +106,17 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
             fillIndicator.gameObject.SetActive(true);
         }
         
-        // if (startHoldSound != null)
-        // {
-        //     startHoldSound.Play();
-        // }
+        // Play start sound
+        if (startHoldSound != null && startHoldSound.isActiveAndEnabled)
+        {
+            startHoldSound.Play();
+        }
         
-        // if (holdingSound != null)
-        // {
-        //     holdingSound.Play();
-        // }
+        // Play looping sound
+        if (holdingSound != null && holdingSound.isActiveAndEnabled && !holdingSound.isPlaying)
+        {
+            holdingSound.Play();
+        }
         
         OnInteractionStart();
     }
@@ -100,7 +125,9 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     {
         if (!isHolding)
             return;
-            
+        
+        Debug.Log($"OnPointerUp on {gameObject.name}, held for {currentHoldDuration}s");
+        
         isHolding = false;
         
         if (fillIndicator != null)
@@ -108,32 +135,39 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
             fillIndicator.gameObject.SetActive(false);
         }
         
-        // if (holdingSound != null && holdingSound.isPlaying)
-        // {
-        //     holdingSound.Stop();
-        // }
+        // Stop looping sound
+        if (holdingSound != null && holdingSound.isActiveAndEnabled && holdingSound.isPlaying)
+        {
+            holdingSound.Stop();
+        }
         
-        // if (endHoldSound != null)
-        // {
-        //     endHoldSound.Play();
-        // }
+        // Play end sound
+        if (endHoldSound != null && endHoldSound.isActiveAndEnabled)
+        {
+            endHoldSound.Play();
+        }
         
+        // Pass the current hold duration to the callback
         OnHoldRelease?.Invoke(currentHoldDuration);
+        
         OnInteractionEnd();
     }
     
     protected virtual void OnHoldComplete()
     {
-        // Override in derived classes to handle completed hold
-        // if (holdingSound != null && holdingSound.isPlaying)
-        // {
-        //     holdingSound.Stop();
-        // }
+        Debug.Log($"Hold completed on {gameObject.name}");
         
-        // if (endHoldSound != null)
-        // {
-        //     endHoldSound.Play();
-        // }
+        // Stop looping sound
+        if (holdingSound != null && holdingSound.isActiveAndEnabled && holdingSound.isPlaying)
+        {
+            holdingSound.Stop();
+        }
+        
+        // Play end sound
+        if (endHoldSound != null && endHoldSound.isActiveAndEnabled)
+        {
+            endHoldSound.Play();
+        }
         
         OnInteractionEnd();
     }

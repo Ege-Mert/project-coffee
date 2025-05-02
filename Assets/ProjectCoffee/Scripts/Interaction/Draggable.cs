@@ -4,16 +4,18 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 /// <summary>
 /// Base class for draggable UI elements
 /// </summary>
-public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IInteractiveElement
+public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [SerializeField] protected bool returnToOriginalPositionOnFail = true;
+    [SerializeField] public bool returnToOriginalPositionOnFail = true;
     [SerializeField] protected Canvas parentCanvas;
     [SerializeField] protected Image image;
-    // [SerializeField] protected AudioSource dragSound;
-    // [SerializeField] protected AudioSource dropSound;
+    [SerializeField] protected AudioSource dragSound;
+    [SerializeField] protected AudioSource dropSound;
+    [SerializeField] protected bool debugMode = true;
     
     protected RectTransform rectTransform;
     protected Vector2 originalPosition;
@@ -31,78 +33,79 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
         
-        // FIXED: More robust Canvas finding
+        // More robust Canvas finding
         if (parentCanvas == null)
         {
-            // Try to find canvas in parents
-            parentCanvas = GetComponentInParent<Canvas>();
-            
-            // If still null, try to find it in the scene
-            if (parentCanvas == null)
+            FindParentCanvas();
+        }
+        
+        SaveOriginalState();
+    }
+    
+    private void FindParentCanvas()
+    {
+        // Try to find canvas in parents
+        parentCanvas = GetComponentInParent<Canvas>();
+        
+        // If still null, try to find it in the scene
+        if (parentCanvas == null)
+        {
+            Canvas[] canvases = FindObjectsOfType<Canvas>();
+            if (canvases.Length > 0)
             {
-                Canvas[] canvases = FindObjectsOfType<Canvas>();
-                if (canvases.Length > 0)
+                // Find the main canvas (typically the one with "MainCanvas" name or lowest in sorting order)
+                foreach (Canvas canvas in canvases)
                 {
-                    // Find the main canvas (typically the one with "MainCanvas" name or lowest in sorting order)
-                    foreach (Canvas canvas in canvases)
+                    if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                     {
-                        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                        {
-                            parentCanvas = canvas;
-                            Debug.Log($"Found canvas: {canvas.name} for draggable {gameObject.name}");
-                            break;
-                        }
-                    }
-                    
-                    // If we still don't have a canvas, just use the first one
-                    if (parentCanvas == null && canvases.Length > 0)
-                    {
-                        parentCanvas = canvases[0];
-                        Debug.Log($"Using fallback canvas: {parentCanvas.name} for draggable {gameObject.name}");
+                        parentCanvas = canvas;
+                        DebugLog($"Found canvas: {canvas.name} for draggable {gameObject.name}");
+                        break;
                     }
                 }
-                else
+                
+                // If we still don't have a canvas, just use the first one
+                if (parentCanvas == null && canvases.Length > 0)
                 {
-                    Debug.LogError($"No Canvas found in the scene! Draggable {gameObject.name} won't work properly.");
+                    parentCanvas = canvases[0];
+                    DebugLog($"Using fallback canvas: {parentCanvas.name} for draggable {gameObject.name}");
                 }
             }
             else
             {
-                Debug.Log($"Found parent canvas: {parentCanvas.name} for draggable {gameObject.name}");
+                Debug.LogError($"No Canvas found in the scene! Draggable {gameObject.name} won't work properly.");
             }
         }
+        else
+        {
+            DebugLog($"Found parent canvas: {parentCanvas.name} for draggable {gameObject.name}");
+        }
+    }
+    
+    /// <summary>
+    /// Save the current state (position and parent) for returning later if needed
+    /// </summary>
+    public void SaveOriginalState()
+    {
+        if (rectTransform == null) return;
         
         originalPosition = rectTransform.anchoredPosition;
         originalParent = transform.parent;
-    }
-    
-    public virtual bool CanInteract()
-    {
-        // Override in derived classes to add specific conditions
-        return true;
-    }
-    
-    public virtual void OnInteractionStart()
-    {
-        // Visual feedback when interaction starts
-        transform.DOScale(1.1f, 0.2f);
-    }
-    
-    public virtual void OnInteractionEnd()
-    {
-        // Visual feedback when interaction ends
-        transform.DOScale(1.0f, 0.2f);
+        
+        DebugLog($"Saved original state for {gameObject.name}: Position={originalPosition}, Parent={originalParent?.name ?? "null"}");
     }
     
     public virtual void OnBeginDrag(PointerEventData eventData)
     {
+        DebugLog($"Begin Drag - {gameObject.name}");
+        
         if (!CanInteract())
         {
             eventData.pointerDrag = null;
             return;
         }
         
-        // FIXED: Check if we have a valid canvas
+        // Check if we have a valid canvas
         if (parentCanvas == null)
         {
             Debug.LogError($"Cannot drag {gameObject.name}: No Canvas reference found!");
@@ -111,8 +114,9 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         }
         
         isDragging = true;
-        originalPosition = rectTransform.anchoredPosition;
-        originalParent = transform.parent;
+        
+        // Save current state as original for return if needed
+        SaveOriginalState();
         
         // Make it transparent and pass through raycast while dragging
         canvasGroup.alpha = 0.8f;
@@ -121,13 +125,11 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         // Move to the top of the hierarchy for proper rendering order
         transform.SetAsLastSibling();
         
-        // // Play sound
-        // if (dragSound != null)
-        // {
-        //     dragSound.Play();
-        // }
-        
-        OnInteractionStart();
+        // Play sound
+        if (dragSound != null && dragSound.isActiveAndEnabled)
+        {
+            dragSound.Play();
+        }
     }
     
     public virtual void OnDrag(PointerEventData eventData)
@@ -151,46 +153,115 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         if (!isDragging)
             return;
         
+        DebugLog($"End Drag - {gameObject.name}");
+        
         isDragging = false;
         
         // Restore visual properties
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
         
-        // Check if dropped on a drop zone
+        bool validDropPerformed = false;
+        DropZone dropZone = null;
+        
+        // Check for drop zone under the pointer
         if (eventData.pointerCurrentRaycast.gameObject != null)
         {
-            DropZone dropZone = eventData.pointerCurrentRaycast.gameObject.GetComponent<DropZone>();
+            // Try to get the DropZone directly from the hit object
+            dropZone = eventData.pointerCurrentRaycast.gameObject.GetComponent<DropZone>();
             
-            if (dropZone != null && dropZone.CanAccept(this))
+            // If no DropZone found on the direct hit, try to find it in the parents
+            if (dropZone == null)
             {
-                dropZone.OnItemDropped(this);
+                dropZone = eventData.pointerCurrentRaycast.gameObject.GetComponentInParent<DropZone>();
+                if (dropZone != null)
+                {
+                    DebugLog($"Found drop zone {dropZone.name} in parent hierarchy");
+                }
+            }
+            
+            if (dropZone != null)
+            {
+                DebugLog($"Drop zone found: {dropZone.name}, Checking if can accept");
                 
-                // // Play sound
-                // if (dropSound != null)
-                // {
-                //     dropSound.Play();
-                // }
+                bool canAccept = dropZone.CanAccept(this);
+                DebugLog($"DropZone.CanAccept result: {canAccept}");
                 
-                OnInteractionEnd();
-                return;
+                if (canAccept)
+                {
+                    DebugLog($"Calling OnItemDropped on {dropZone.name}");
+                    dropZone.OnItemDropped(this);
+                    validDropPerformed = true;
+                    
+                    // Play sound
+                    if (dropSound != null && dropSound.isActiveAndEnabled)
+                    {
+                        dropSound.Play();
+                    }
+                }
+                else
+                {
+                    DebugLog($"Drop zone {dropZone.name} rejected the drop");
+                }
+            }
+            else
+            {
+                DebugLog($"No drop zone found at drop position");
             }
         }
         
-        // No valid drop zone found, return to original position
-        if (returnToOriginalPositionOnFail)
+        // If dropped on an invalid zone or no zone at all, return to original position
+        if (!validDropPerformed && returnToOriginalPositionOnFail)
         {
-            ReturnToOriginalPosition();
+            DebugLog($"No valid drop. Returning to original position: {originalPosition}");
+            StartCoroutine(ReturnToOriginalPositionDelayed());
         }
+    }
+    
+    protected IEnumerator ReturnToOriginalPositionDelayed()
+    {
+        // Small delay to make sure any OnTransformChildrenChanged events have finished
+        yield return new WaitForEndOfFrame();
         
-        OnInteractionEnd();
+        ReturnToOriginalPosition();
     }
     
     public virtual void ReturnToOriginalPosition()
     {
+        if (originalParent == null)
+        {
+            Debug.LogError($"Cannot return {gameObject.name} to original position: originalParent is null!");
+            return;
+        }
+        
+        DebugLog($"Returning {gameObject.name} to original position: {originalPosition} under parent {originalParent.name}");
+        
+        // Return to original parent if not already there
         transform.SetParent(originalParent);
         
-        // Animate return
-        rectTransform.DOAnchorPos(originalPosition, 0.3f).SetEase(Ease.OutBack);
+        // Immediately set the position to make sure it takes effect
+        rectTransform.anchoredPosition = originalPosition;
+        
+        // Then animate it slightly to give feedback
+        rectTransform.DOPunchPosition(Vector3.one * 5f, 0.3f, 10, 1f)
+            .OnComplete(() => {
+                DebugLog($"{gameObject.name} returned to original position");
+                // Make sure the position is correct after animation
+                rectTransform.anchoredPosition = originalPosition;
+            });
+    }
+    
+    protected virtual bool CanInteract()
+    {
+        // Check if the component is active and enabled
+        return isActiveAndEnabled;
+    }
+    
+    protected void DebugLog(string message)
+    {
+        if (debugMode)
+        {
+            Debug.Log($"[Draggable] {message}");
+        }
     }
 }

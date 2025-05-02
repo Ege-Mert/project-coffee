@@ -1,21 +1,20 @@
 using System;
-using System.Collections;
-using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 /// <summary>
 /// Base class for spinnable UI elements
 /// </summary>
-public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler, IInteractiveElement
+public class Spinnable : InteractiveElementBase, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
-    [SerializeField] protected bool isActive = true;
     [SerializeField] protected float requiredSpinAngle = 360f; // One full rotation
     [SerializeField] protected RectTransform rotationCenter;
     [SerializeField] protected Image spinProgressIndicator;
-    [SerializeField] protected AudioSource spinSound;
+    [SerializeField] protected AudioSource spinProgressSound;
+    [SerializeField] protected AudioSource spinCompletedSound;
     [SerializeField] protected bool resetOnRelease = false;
-    [SerializeField] protected bool allowBothDirections = true; // Added setting for spin direction
+    [SerializeField] protected bool allowBothDirections = true; // Setting for spin direction
     
     protected bool isSpinning = false;
     protected Vector2 lastDragPosition;
@@ -28,6 +27,8 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
     
     protected virtual void Awake()
     {
+        // Removed the base.Awake() call since InteractiveElementBase doesn't have an Awake method
+        
         if (rotationCenter == null)
         {
             rotationCenter = GetComponent<RectTransform>();
@@ -40,24 +41,32 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         }
         
         // Print debug info
-        print($"SpinnableUI initialized: {gameObject.name}");
-        print($"Required spin angle: {requiredSpinAngle}");
-        print($"Allow both directions: {allowBothDirections}");
+        Debug.Log($"SpinnableUI initialized: {gameObject.name}");
+        Debug.Log($"Required spin angle: {requiredSpinAngle}");
+        Debug.Log($"Allow both directions: {allowBothDirections}");
     }
     
-    public virtual bool CanInteract()
+    public override void OnInteractionStart()
     {
-        return isActive;
+        base.OnInteractionStart();
+        
+        // Additional spinnable-specific interaction start logic
+        if (spinProgressIndicator != null)
+        {
+            spinProgressIndicator.fillAmount = 0f;
+            spinProgressIndicator.gameObject.SetActive(true);
+        }
     }
     
-    public virtual void OnInteractionStart()
+    public override void OnInteractionEnd()
     {
-        // Visual feedback when interaction starts
-    }
-    
-    public virtual void OnInteractionEnd()
-    {
-        // Visual feedback when interaction ends
+        base.OnInteractionEnd();
+        
+        // Additional spinnable-specific interaction end logic
+        if (spinProgressIndicator != null)
+        {
+            spinProgressIndicator.gameObject.SetActive(false);
+        }
     }
     
     public virtual void OnPointerDown(PointerEventData eventData)
@@ -65,16 +74,10 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         if (!CanInteract())
             return;
             
-        print("Spinnable pointer down");
+        Debug.Log("Spinnable pointer down");
         isSpinning = true;
         currentSpinAngle = 0f;
         lastDragPosition = eventData.position;
-        
-        if (spinProgressIndicator != null)
-        {
-            spinProgressIndicator.fillAmount = 0f;
-            spinProgressIndicator.gameObject.SetActive(true);
-        }
         
         OnInteractionStart();
     }
@@ -84,18 +87,13 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         if (!isSpinning)
             return;
             
-        print("Spinnable pointer up");
+        Debug.Log("Spinnable pointer up");
         isSpinning = false;
         
         if (resetOnRelease)
         {
             // Reset rotation
             rotationCenter.rotation = Quaternion.identity;
-        }
-        
-        if (spinProgressIndicator != null)
-        {
-            spinProgressIndicator.gameObject.SetActive(false);
         }
         
         OnInteractionEnd();
@@ -119,16 +117,13 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         // Calculate angle change (delta)
         float angleDelta = Mathf.DeltaAngle(previousAngle, currentAngle);
         
-        // Debug log the angle delta
-        //print($"Angle delta: {angleDelta}");
-        
         // Update visual rotation
         rotationCenter.Rotate(0, 0, angleDelta);
         
         // Update total angle and check for completion
         if (Mathf.Abs(angleDelta) > 1f) // Minimum threshold to count as spinning
         {
-            // Modified: Check direction based on setting
+            // Check direction based on setting
             bool validDirection = allowBothDirections || angleDelta > 0;
             
             if (validDirection)
@@ -140,7 +135,16 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
                 // Update progress indicator
                 if (spinProgressIndicator != null)
                 {
-                    spinProgressIndicator.fillAmount = (currentSpinAngle % requiredSpinAngle) / requiredSpinAngle;
+                    float progress = (currentSpinAngle % requiredSpinAngle) / requiredSpinAngle;
+                    spinProgressIndicator.fillAmount = progress;
+                    
+                    // Play progress sound on increments
+                    if (progress > 0.25f && progress < 0.35f || 
+                        progress > 0.5f && progress < 0.6f || 
+                        progress > 0.75f && progress < 0.85f)
+                    {
+                        InteractionFeedbackHelper.PlaySound(spinProgressSound);
+                    }
                 }
                 
                 // Check if completed a full rotation
@@ -149,12 +153,6 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
                     spinCount++;
                     currentSpinAngle = currentSpinAngle % requiredSpinAngle;
                     OnSpinComplete();
-                    
-                    // Play sound
-                    if (spinSound != null)
-                    {
-                        spinSound.Play();
-                    }
                 }
             }
         }
@@ -164,7 +162,14 @@ public class Spinnable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
     
     protected virtual void OnSpinComplete()
     {
-        print($"Spin completed! Spin count: {spinCount}");
+        Debug.Log($"Spin completed! Spin count: {spinCount}");
+        
+        // Play completion sound
+        InteractionFeedbackHelper.PlaySound(spinCompletedSound);
+        
+        // Add visual feedback
+        InteractionFeedbackHelper.PlayBounceAnimation(transform);
+        
         // Notify listeners
         OnSpinCompleted?.Invoke(spinCount);
     }

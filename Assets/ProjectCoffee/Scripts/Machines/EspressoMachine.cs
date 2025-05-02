@@ -86,7 +86,19 @@ public class EspressoMachine : MonoBehaviour
             }
         }
         
-        brewButton.CanInteractCheck = () => {
+        // brewButton.CanInteractCheck = () => {
+        //     Debug.Log("Checking if brew button can be interacted with...");
+        //     bool canInteract = false;
+        //     for (int i = 0; i < brewingSlots.Count; i++) {
+        //         bool slotCanBrew = CanBrewSlot(i);
+        //         Debug.Log($"Slot {i} can brew: {slotCanBrew}");
+        //         if (slotCanBrew) canInteract = true;
+        //     }
+        //     Debug.Log($"Brew button interactable: {canInteract}");
+        //     return canInteract;
+        // };
+
+        brewButton.CanInteractCustomCheck = () => {
             Debug.Log("Checking if brew button can be interacted with...");
             bool canInteract = false;
             for (int i = 0; i < brewingSlots.Count; i++) {

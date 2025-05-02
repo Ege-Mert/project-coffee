@@ -177,6 +177,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1728999984}
     m_Modifications:
+    - target: {fileID: 6097645793207691010, guid: 964123d07e1168341934b16441a79519, type: 3}
+      propertyPath: returnToOriginalPositionOnFail
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6296893565957166768, guid: 964123d07e1168341934b16441a79519, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -783,6 +787,7 @@ MonoBehaviour:
   coffeeAddSound: {fileID: 0}
   coffeeDispenseSound: {fileID: 0}
   machineAnimator: {fileID: 0}
+  logDebugging: 1
 --- !u!114 &435748851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1024,13 +1029,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 2117398626}
   slotIndex: 0
   isPortafilterZone: 1
+  debugLogs: 1
 --- !u!114 &546816799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1273,13 +1283,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 2117398626}
   slotIndex: 1
   isPortafilterZone: 0
+  debugLogs: 1
 --- !u!114 &556199973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1561,7 +1576,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  clickCooldown: 0.5
+  interactionCooldown: 0.2
+  interactionSound: {fileID: 0}
   clickSound: {fileID: 0}
   espressoMachine: {fileID: 2117398626}
 --- !u!1 &810611443
@@ -1746,11 +1762,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 435748850}
+  debugLogs: 1
 --- !u!114 &1114903399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1859,10 +1880,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentGrinder: {fileID: 2095772918}
 --- !u!114 &1136698214
 MonoBehaviour:
@@ -2142,6 +2167,9 @@ MonoBehaviour:
   isActive: 1
   maxHoldTime: 5
   fillIndicator: {fileID: 1786343781}
+  startHoldSound: {fileID: 0}
+  endHoldSound: {fileID: 0}
+  holdingSound: {fileID: 0}
 --- !u!114 &1314990929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2212,13 +2240,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 2117398626}
   slotIndex: 0
   isPortafilterZone: 0
+  debugLogs: 1
 --- !u!114 &1318800933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2327,10 +2360,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
+  interactionCooldown: 0.2
+  interactionSound: {fileID: 0}
   requiredSpinAngle: 360
   rotationCenter: {fileID: 1321812440}
   spinProgressIndicator: {fileID: 192375236}
-  spinSound: {fileID: 0}
+  spinProgressSound: {fileID: 0}
+  spinCompletedSound: {fileID: 0}
   resetOnRelease: 0
   allowBothDirections: 1
 --- !u!114 &1321812442
@@ -2650,7 +2686,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 240}
+  m_AnchoredPosition: {x: 0, y: 255}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1536601755
@@ -2685,13 +2721,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 2117398626}
   slotIndex: 1
   isPortafilterZone: 1
+  debugLogs: 1
 --- !u!114 &1536601757
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3335,10 +3376,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  acceptedTypes: []
   highlightImage: {fileID: 0}
   validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
   invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
   parentMachine: {fileID: 435748850}
 --- !u!1 &1890042008
 GameObject:
@@ -3526,7 +3571,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  clickCooldown: 0.5
+  interactionCooldown: 0.2
+  interactionSound: {fileID: 0}
   clickSound: {fileID: 0}
   cupPrefab: {fileID: 2184070816422419299, guid: cc039912339feac468078fd94c813c6b, type: 3}
   cupSpawnPoint: {fileID: 1519329324}
@@ -3535,6 +3581,8 @@ MonoBehaviour:
   cupParticles: {fileID: 0}
   cupSound: {fileID: 0}
   stackAnimator: {fileID: 0}
+  debugLogs: 1
+  gameCanvas: {fileID: 0}
 --- !u!114 &1904383110
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3770,7 +3818,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isActive: 1
-  clickCooldown: 0.5
+  interactionCooldown: 0.2
+  interactionSound: {fileID: 0}
   clickSound: {fileID: 0}
   targetGrinder: {fileID: 2095772918}
   beansPerClick: 1

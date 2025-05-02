@@ -25,6 +25,9 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     [SerializeField] private AudioSource coffeeAddSound;
     [SerializeField] private AudioSource coffeeDispenseSound;
     [SerializeField] private Animator machineAnimator;
+
+    [Header("Debug")]
+    [SerializeField] private bool logDebugging = true;
     
     // State variables
     private Portafilter currentPortafilter;
@@ -49,6 +52,11 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     
     private void Start()
     {
+        DebugLog("CoffeeGrammingMachine Start called");
+        
+        // Add test coffee for debugging
+        storedCoffeeAmount = 50f;
+        
         ConfigureDropZones();
         ConfigureGrammingButton();
         
@@ -64,13 +72,23 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     {
         if (portafilterZone != null)
         {
+            DebugLog($"Configuring portafilter zone: {portafilterZone.name}");
             portafilterZone.AcceptPredicate = (item) => item is Portafilter && currentPortafilter == null;
+        }
+        else
+        {
+            Debug.LogError("Portafilter zone reference is missing!");
         }
         
         if (groundCoffeeZone != null)
         {
+            DebugLog($"Configuring ground coffee zone: {groundCoffeeZone.name}");
             // Accept ground coffee regardless of portafilter presence
             groundCoffeeZone.AcceptPredicate = (item) => item is GroundCoffee;
+        }
+        else
+        {
+            Debug.LogError("Ground coffee zone reference is missing!");
         }
     }
     
@@ -78,10 +96,21 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     {
         if (grammingButton != null)
         {
-            // Can interact if there's a portafilter and stored coffee
-            grammingButton.CanInteract = () => currentPortafilter != null && storedCoffeeAmount > 0;
+            DebugLog($"Configuring gramming button: {grammingButton.name}");
+            
+            // Directly assign the method reference
+            grammingButton.CanInteract = () => {
+                bool canInteract = currentPortafilter != null && storedCoffeeAmount > 0;
+                DebugLog($"Gramming button CanInteract check: {canInteract} (Portafilter: {(currentPortafilter != null)}, Coffee: {storedCoffeeAmount}g)");
+                return canInteract;
+            };
+            
             grammingButton.OnHold = OnGrammingButtonHold;
             grammingButton.OnHoldRelease = OnGrammingButtonRelease;
+        }
+        else
+        {
+            Debug.LogError("Gramming button reference is missing!");
         }
     }
     
@@ -106,6 +135,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             Portafilter portafilter = portafilterZone.transform.GetChild(0).GetComponent<Portafilter>();
             if (portafilter != null)
             {
+                DebugLog($"Portafilter detected: {portafilter.name}");
                 currentPortafilter = portafilter;
                 UpdateUI();
                 UIManager.Instance.ShowNotification("Portafilter placed in gramming machine");
@@ -120,6 +150,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
         // Detect when portafilter is removed
         else if (portafilterZone.transform.childCount == 0 && currentPortafilter != null)
         {
+            DebugLog("Portafilter removed");
             currentPortafilter = null;
             UpdateUI();
         }
@@ -127,8 +158,19 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     
     private void OnGrammingButtonHold(float duration)
     {
-        if (currentPortafilter == null || storedCoffeeAmount <= 0)
+        DebugLog($"Gramming button held for {duration}s");
+        
+        if (currentPortafilter == null)
+        {
+            DebugLog("Cannot dispense: No portafilter");
             return;
+        }
+        
+        if (storedCoffeeAmount <= 0)
+        {
+            DebugLog("Cannot dispense: No stored coffee");
+            return;
+        }
         
         // Get rate from config or use default
         float rate = config != null ? config.grammingRate : 2f;
@@ -142,6 +184,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             if (!isDispensing)
             {
                 isDispensing = true;
+                DebugLog("Started dispensing coffee");
                 PlayDispenseEffects();
             }
             
@@ -149,7 +192,8 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             storedCoffeeAmount -= amountToDispense;
             
             // Add to portafilter
-            currentPortafilter.TryAddItem("ground_coffee", amountToDispense);
+            bool added = currentPortafilter.TryAddItem("ground_coffee", amountToDispense);
+            DebugLog($"Added {amountToDispense}g of coffee to portafilter, success: {added}");
             
             // Update UI
             UpdateUI();
@@ -164,6 +208,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     
     private void OnGrammingButtonRelease(float heldDuration)
     {
+        DebugLog($"Gramming button released after {heldDuration}s");
         isDispensing = false;
         StopDispenseEffects();
         
@@ -173,6 +218,8 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             float coffeeAmount = currentPortafilter.GetItemAmount("ground_coffee");
             float quality = qualityEvaluator.EvaluateQuality(coffeeAmount);
             string qualityDesc = qualityEvaluator.GetQualityDescription(quality);
+            
+            DebugLog($"Coffee in portafilter: {coffeeAmount}g, Quality: {qualityDesc} ({quality:F2})");
             
             // Only show notification if we actually dispensed some coffee
             if (heldDuration > 0.1f && coffeeAmount > 0)
@@ -243,7 +290,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             coffeeParticles.Play();
         }
         
-        if (coffeeDispenseSound != null && !coffeeDispenseSound.isPlaying)
+        if (coffeeDispenseSound != null && coffeeDispenseSound.isActiveAndEnabled && !coffeeDispenseSound.isPlaying)
         {
             coffeeDispenseSound.Play();
         }
@@ -357,6 +404,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     {
         if (item is Portafilter portafilter)
         {
+            DebugLog($"Portafilter dropped: {portafilter.name}");
             currentPortafilter = portafilter;
             UpdateUI();
             UIManager.Instance.ShowNotification("Portafilter placed in gramming machine");
@@ -370,6 +418,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     {
         if (item is Portafilter)
         {
+            DebugLog("Portafilter removed from zone");
             currentPortafilter = null;
             UpdateUI();
         }
@@ -383,6 +432,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
         if (item is GroundCoffee groundCoffee)
         {
             float coffeeAmount = groundCoffee.GetAmount();
+            DebugLog($"Ground coffee dropped: {coffeeAmount}g");
             
             // Add to storage instead of directly to portafilter
             TryAddCoffee(coffeeAmount);
@@ -395,7 +445,7 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
             }
             
             // Sound
-            if (coffeeAddSound != null)
+            if (coffeeAddSound != null && coffeeAddSound.isActiveAndEnabled)
             {
                 coffeeAddSound.Play();
             }
@@ -429,7 +479,16 @@ public class CoffeeGrammingMachine : MonoBehaviour, ICoffeeContainer
     public void SetUpgradeLevel(int level)
     {
         currentUpgradeLevel = level;
+        DebugLog($"Machine upgraded to level {level}");
         
         // Additional upgrade-specific logic will be implemented later
+    }
+    
+    private void DebugLog(string message)
+    {
+        if (logDebugging)
+        {
+            Debug.Log($"[GrammingMachine] {message}");
+        }
     }
 }
