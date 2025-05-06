@@ -98,6 +98,9 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
                     {
                         invalidDropSound.Play();
                     }
+                    
+                    // Note: Don't return item to original position here since
+                    // the Draggable class handles that in OnEndDrag
                 }
             }
         }

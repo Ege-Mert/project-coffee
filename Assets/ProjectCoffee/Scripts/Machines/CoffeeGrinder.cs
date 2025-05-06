@@ -1,421 +1,344 @@
-using System.Collections;
-using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ProjectCoffee.Services;
+using ProjectCoffee.Machines;
+using System.Collections;
+using DG.Tweening;
 
 /// <summary>
-/// Coffee grinder for creating ground coffee
+/// Refactored coffee grinder that uses service pattern for logic
 /// </summary>
-public class CoffeeGrinder : MonoBehaviour
+public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
 {
-    [Header("References")]
+    [Header("Grinder Specific UI")]
     [SerializeField] private Image beansLevelImage;
     [SerializeField] private Spinnable grindHandle;
+    [SerializeField] private Clickable grindButton; // For level 1+ upgrade
     [SerializeField] private GroundCoffeeOutputZone groundCoffeeOutputZone;
     [SerializeField] private GameObject groundCoffeePrefab;
     
-    [Header("Configuration")]
-    [SerializeField] private GrinderConfig config;
+    [Header("Visual Settings")]
     [SerializeField] private bool keepHandleAlwaysVisible = true;
     
-    // [Header("Effects")]
-    // [SerializeField] private ParticleSystem grindingParticles;
-    // [SerializeField] private AudioSource grindSound;
-    // [SerializeField] private Animator grinderAnimator;
+    private Coroutine processingCoroutine;
+    private GroundCoffee currentGroundCoffee; // Keep track of the current coffee chunk
     
-    // State variables
-    private int currentUpgradeLevel = 0;
-    private int currentBeanFills = 0;
-    private int spinsSinceLastUpgrade = 0;
-    private GroundCoffee currentGroundCoffee;
-    private bool isProcessingGrinding = false;
-    
-    private void Awake()
+    protected override void InitializeService()
     {
-        // Force Unity to print these messages to console
-        print("CoffeeGrinderUI Awake called");
+        service = new CoffeeGrinderService(config as GrinderConfig);
+    }
+    
+    protected override void Start()
+    {
+        base.Start();
         
-        // Validate config
-        if (config == null)
-        {
-            Debug.LogError("GrinderConfig is not assigned! Please assign a config in the inspector.");
-        }
+        // Setup grinder-specific UI elements
+        SetupGrindHandle();
+        SetupGrindButton();
+        SetupOutputZone();
+        UpdateBeansVisual(0);
         
-        if (groundCoffeePrefab == null)
+        // Subscribe to grinder-specific events
+        if (service != null)
         {
-            print("ERROR: Ground Coffee Prefab is not assigned!");
-        }
-        
-        if (groundCoffeeOutputZone == null)
-        {
-            print("ERROR: Ground Coffee Output Zone is not assigned!");
+            service.OnBeanCountChanged += UpdateBeansVisual;
+            service.OnCoffeeOutputReady += CreateGroundCoffee;
+            service.OnCoffeeSizeUpgraded += UpgradeGroundCoffee;
+            service.OnSpinCompleted += HandleSpinFeedback;
         }
     }
     
-    private void Start()
+    private void SetupGrindHandle()
     {
-        print("CoffeeGrinderUI Start called");
-        print($"Initial bean count: {currentBeanFills}");
-        
-        UpdateBeansVisual();
-        
-        // Extra validation
-        if (groundCoffeePrefab == null)
+        if (grindHandle != null)
         {
-            print("ERROR: Ground Coffee Prefab is not assigned in the inspector!");
+            grindHandle.gameObject.SetActive(keepHandleAlwaysVisible || (service?.HasBeans ?? false));
+            grindHandle.OnSpinCompleted += OnHandleSpinCompleted;
+            
+            // Set interaction check - only check if has beans for level 0
+            grindHandle.CanInteractCustomCheck = () => {
+                if (service == null) return false;
+                return service.HasBeans && service.UpgradeLevel == 0;
+            };
         }
-        
-        if (groundCoffeeOutputZone == null)
+    }
+    
+    private void SetupGrindButton()
+    {
+        if (grindButton != null)
         {
-            print("ERROR: Ground Coffee Output Zone is not assigned in the inspector!");
+            // Start hidden, will be shown when upgraded
+            grindButton.gameObject.SetActive(false);
+            grindButton.OnClicked += OnGrindButtonClicked;
+            
+            // Set interaction check
+            grindButton.CanInteractCustomCheck = () => service.HasBeans && service.UpgradeLevel >= 1;
         }
-        else
+    }
+    
+    private void SetupOutputZone()
+    {
+        if (groundCoffeeOutputZone != null)
         {
-            // Make sure the output zone has a reference to this grinder
             groundCoffeeOutputZone.SetParentGrinder(this);
-            print($"Set parent grinder reference on {groundCoffeeOutputZone.name}");
+        }
+    }
+    
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        
+        // Unsubscribe from grinder-specific events
+        if (service != null)
+        {
+            service.OnBeanCountChanged -= UpdateBeansVisual;
+            service.OnCoffeeOutputReady -= CreateGroundCoffee;
+            service.OnCoffeeSizeUpgraded -= UpgradeGroundCoffee;
+            service.OnSpinCompleted -= HandleSpinFeedback;
         }
         
         if (grindHandle != null)
         {
-            grindHandle.gameObject.SetActive(keepHandleAlwaysVisible || currentBeanFills > 0);
-            grindHandle.OnSpinCompleted += OnHandleSpinCompleted;
-            print("Subscribed to handle spin events");
-        }
-        else
-        {
-            print("ERROR: Grind Handle is not assigned in the inspector!");
+            grindHandle.OnSpinCompleted -= OnHandleSpinCompleted;
         }
         
-        // if (grindingParticles != null)
-        // {
-            // grindingParticles.Stop();
-        // }
+        if (grindButton != null)
+        {
+            grindButton.OnClicked -= OnGrindButtonClicked;
+        }
     }
     
+    /// <summary>
+    /// Add beans to the grinder
+    /// </summary>
     public void AddBeans(int amount)
     {
-        print($">>> AddBeans({amount}) called. Current beans: {currentBeanFills}, Max: {config.maxBeanFills}");
-        
-        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
-        
-        if (currentBeanFills < maxFills)
-        {
-            int newAmount = Mathf.Min(currentBeanFills + amount, maxFills);
-            print($"Adding beans. Current: {currentBeanFills} -> New: {newAmount}");
-            currentBeanFills = newAmount;
-            
-            UpdateBeansVisual();
-            
-            if (grindHandle != null && !grindHandle.gameObject.activeSelf)
-            {
-                grindHandle.gameObject.SetActive(true);
-                print("Activated grind handle");
-            }
-            
-            // Test direct access to variables
-            print($"After adding - Bean count: {currentBeanFills}, Max: {maxFills}");
-            
-            UIManager.Instance.ShowNotification($"Added beans. Total: {currentBeanFills}/{maxFills}");
-        }
-        else
-        {
-            print($"Grinder already full. Current: {currentBeanFills}, Max: {maxFills}");
-            UIManager.Instance.ShowNotification("Grinder is full of beans!");
-        }
+        service?.AddBeans(amount);
     }
     
+    /// <summary>
+    /// Handle spin completion from UI
+    /// </summary>
     private void OnHandleSpinCompleted(int spinCount)
     {
-        int spinsNeeded = config != null ? config.spinsPerStage : 1; // Fallback if config missing
+        // For progressive upgrading, we want to process each spin individually
+        service?.OnHandleSpinCompleted();
+    }
+    
+    /// <summary>
+    /// Handle grind button click
+    /// </summary>
+    private void OnGrindButtonClicked()
+    {
+        service?.OnButtonPressed();
         
-        print($">>> Handle spin completed. Spins: {spinsSinceLastUpgrade + 1}, Required: {spinsNeeded}, Beans: {currentBeanFills}");
-        
-        spinsSinceLastUpgrade++;
-        
-        // // Only play effects if there are beans
-        // if (currentBeanFills > 0)
-        // {
-        //     if (grindingParticles != null && !grindingParticles.isPlaying)
-        //     {
-        //         grindingParticles.Play();
-        //     }
-            
-        //     if (grindSound != null)
-        //     {
-        //         grindSound.Play();
-        //     }
-            
-        //     if (grinderAnimator != null)
-        //     {
-        //         grinderAnimator.SetTrigger("Grind");
-        //     }
-        // }
-        
-        // Debug output regardless of bean count
-        print($"Spin progress: {spinsSinceLastUpgrade}/{spinsNeeded} with {currentBeanFills} beans");
-        
-        // Check if we have enough spins to process grinding
-        if (spinsSinceLastUpgrade >= spinsNeeded && currentBeanFills > 0 && !isProcessingGrinding)
+        // Start processing coroutine for level 1+
+        if (service.UpgradeLevel >= 1 && service.CurrentState == MachineState.Processing)
         {
-            print("Enough spins accumulated. Processing grinding...");
-            ProcessGrinding();
-            spinsSinceLastUpgrade = 0;
-        }
-        else if (currentBeanFills <= 0)
-        {
-            print("No beans to grind!");
-            UIManager.Instance.ShowNotification("No beans to grind! Please add coffee beans.");
+            if (processingCoroutine != null)
+            {
+                StopCoroutine(processingCoroutine);
+            }
+            processingCoroutine = StartCoroutine(ProcessGrinding());
         }
     }
     
-    private void ProcessGrinding()
+    /// <summary>
+    /// Processing coroutine for timed grinding (Level 1+)
+    /// </summary>
+    private IEnumerator ProcessGrinding()
     {
-        if (currentBeanFills <= 0 || isProcessingGrinding)
-            return;
-            
-        isProcessingGrinding = true;
+        float elapsedTime = 0f;
         
-        print($"Processing grinding. Beans: {currentBeanFills}, Has coffee: {currentGroundCoffee != null}");
-        
-        // Consume beans
-        currentBeanFills--;
-        UpdateBeansVisual();
-        
-        // If no ground coffee exists yet, create a new one
-        if (currentGroundCoffee == null)
+        // Start effects
+        if (processingParticles != null)
         {
-            print("No current ground coffee found. Creating new ground coffee...");
-            StartCoroutine(CreateGroundCoffee(GroundCoffee.GrindSize.Small));
-        }
-        // If ground coffee exists, upgrade its size
-        else if (currentGroundCoffee != null)
-        {
-            print("Upgrading existing ground coffee size");
-            UpgradeExistingCoffee();
+            processingParticles.Play();
         }
         
-        // // Only stop particles if no beans, but don't hide the handle
-        // if (currentBeanFills <= 0 && grindingParticles != null)
-        // {
-        //     grindingParticles.Stop();
-        // }
+        if (processStartSound != null)
+        {
+            processStartSound.Play();
+        }
+        
+        // Update loop
+        while (service.CurrentState == MachineState.Processing)
+        {
+            elapsedTime += Time.deltaTime;
+            service.ProcessUpdate(Time.deltaTime);
+            yield return null;
+        }
+        
+        // Stop effects
+        if (processingParticles != null)
+        {
+            processingParticles.Stop();
+        }
+        
+        processingCoroutine = null;
     }
     
-    private void UpgradeExistingCoffee()
+    /// <summary>
+    /// Update beans visual based on count
+    /// </summary>
+    private void UpdateBeansVisual(int beanCount)
     {
-        if (currentGroundCoffee == null)
+        if (beansLevelImage != null)
         {
-            isProcessingGrinding = false;
+            float fillAmount = (float)beanCount / service.MaxBeanFills;
+            beansLevelImage.fillAmount = fillAmount;
+        }
+        
+        // Update handle visibility
+        if (grindHandle != null && !keepHandleAlwaysVisible)
+        {
+            grindHandle.gameObject.SetActive(beanCount > 0);
+        }
+    }
+    
+    /// <summary>
+    /// Create ground coffee output
+    /// </summary>
+    private void CreateGroundCoffee(GroundCoffee.GrindSize size)
+    {
+        if (groundCoffeePrefab == null || groundCoffeeOutputZone == null)
+        {
+            Debug.LogError("Cannot create ground coffee: Missing prefab or output zone!");
             return;
         }
         
-        // Get the current size before upgrading (for logging)
-        GroundCoffee.GrindSize oldSize = currentGroundCoffee.GetGrindSize();
-        
-        // Upgrade the size
-        currentGroundCoffee.UpgradeSize();
-        
-        // Get the new size
-        GroundCoffee.GrindSize newSize = currentGroundCoffee.GetGrindSize();
-        float amount = currentGroundCoffee.GetAmount();
-        
-        print($"Upgraded coffee from {oldSize} to {newSize}");
-        
-        if (oldSize == newSize)
+        // Don't create a new one if we already have one
+        if (currentGroundCoffee != null)
         {
-            print("WARNING: Coffee size didn't change after upgrade!");
+            Debug.Log("Already have ground coffee, will upgrade instead");
+            return;
         }
         
-        // Show notification about the upgrade
-        string sizeText = newSize.ToString();
-        UIManager.Instance.ShowNotification($"Coffee ground size: {sizeText} ({amount}g)");
+        StartCoroutine(CreateGroundCoffeeCoroutine(size));
+    }
+    
+    private IEnumerator CreateGroundCoffeeCoroutine(GroundCoffee.GrindSize size)
+    {
+        // Wait for end of frame to ensure UI is ready
+        yield return new WaitForEndOfFrame();
         
-        // Add a visual effect to show the upgrade
+        // Instantiate ground coffee
+        GameObject coffeeObj = Instantiate(groundCoffeePrefab, groundCoffeeOutputZone.transform);
+        currentGroundCoffee = coffeeObj.GetComponent<GroundCoffee>();
+        
+        if (currentGroundCoffee != null)
+        {
+            // Set properties
+            currentGroundCoffee.SetGrindSize(size);
+            
+            // Set amount based on config
+            float amount = GetAmountForSize(size);
+            currentGroundCoffee.SetAmount(amount);
+            
+            // Position correctly
+            RectTransform rectTransform = coffeeObj.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                rectTransform.anchoredPosition = Vector2.zero;
+                
+                // Appearance animation
+                rectTransform.localScale = Vector3.zero;
+                rectTransform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
+            }
+            
+            UIManager.Instance.ShowNotification($"Created {size} ground coffee!");
+        }
+    }
+    
+    /// <summary>
+    /// Upgrade the existing ground coffee chunk
+    /// </summary>
+    private void UpgradeGroundCoffee(GroundCoffee.GrindSize newSize)
+    {
+        if (currentGroundCoffee == null)
+        {
+            Debug.LogError("No ground coffee to upgrade!");
+            return;
+        }
+        
+        // Update the size
+        currentGroundCoffee.SetGrindSize(newSize);
+        
+        // Update the amount
+        float newAmount = GetAmountForSize(newSize);
+        currentGroundCoffee.SetAmount(newAmount);
+        
+        // Visual feedback
         RectTransform coffeeRect = currentGroundCoffee.GetComponent<RectTransform>();
         if (coffeeRect != null)
         {
             coffeeRect.DOPunchScale(Vector3.one * 0.2f, 0.3f, 2, 0.5f);
         }
         
-        isProcessingGrinding = false;
+        UIManager.Instance.ShowNotification($"Ground coffee upgraded to {newSize} size ({newAmount}g)");
     }
     
-    private IEnumerator CreateGroundCoffee(GroundCoffee.GrindSize size)
+    private float GetAmountForSize(GroundCoffee.GrindSize size)
     {
-        print("Creating ground coffee...");
-        
-        // Check required references
-        if (groundCoffeePrefab == null)
+        if (config != null && config is GrinderConfig grinderConfig)
         {
-            print("ERROR: Cannot create ground coffee: groundCoffeePrefab is null!");
-            isProcessingGrinding = false;
-            yield break;
+            switch (size)
+            {
+                case GroundCoffee.GrindSize.Small:
+                    return grinderConfig.groundCoffeeSizes.Length > 0 ? grinderConfig.groundCoffeeSizes[0] : 6f;
+                case GroundCoffee.GrindSize.Medium:
+                    return grinderConfig.groundCoffeeSizes.Length > 1 ? grinderConfig.groundCoffeeSizes[1] : 12f;
+                case GroundCoffee.GrindSize.Large:
+                    return grinderConfig.groundCoffeeSizes.Length > 2 ? grinderConfig.groundCoffeeSizes[2] : 18f;
+                default:
+                    return 6f;
+            }
         }
-        
-        if (groundCoffeeOutputZone == null)
-        {
-            print("ERROR: Cannot create ground coffee: groundCoffeeOutputZone is null!");
-            isProcessingGrinding = false;
-            yield break;
-        }
-        
-        // Wait for the end of frame to ensure UI elements are ready
-        yield return new WaitForEndOfFrame();
-        
-        try
-        {
-            // Instantiate directly under the output zone
-            GameObject coffeeObj = Instantiate(groundCoffeePrefab, groundCoffeeOutputZone.transform);
-            
-            if (coffeeObj == null)
-            {
-                print("ERROR: Failed to instantiate ground coffee prefab!");
-                isProcessingGrinding = false;
-                yield break;
-            }
-            
-            // Get and initialize the component
-            currentGroundCoffee = coffeeObj.GetComponent<GroundCoffee>();
-            
-            if (currentGroundCoffee == null)
-            {
-                print("ERROR: Ground coffee prefab does not have a GroundCoffee component!");
-                Destroy(coffeeObj);
-                isProcessingGrinding = false;
-                yield break;
-            }
-            
-            // Make sure it has a parent canvas
-            Canvas parentCanvas = groundCoffeeOutputZone.GetComponentInParent<Canvas>();
-            if (parentCanvas != null)
-            {
-                print($"Found parent canvas: {parentCanvas.name}");
-                
-                // Update draggable UI reference directly
-                Draggable draggable = coffeeObj.GetComponent<Draggable>();
-                if (draggable != null)
-                {
-                    var field = typeof(Draggable).GetField("parentCanvas", 
-                        System.Reflection.BindingFlags.Instance | 
-                        System.Reflection.BindingFlags.NonPublic | 
-                        System.Reflection.BindingFlags.Public);
-                        
-                    if (field != null)
-                    {
-                        field.SetValue(draggable, parentCanvas);
-                        print($"Set canvas reference to {parentCanvas.name}");
-                    }
-                }
-            }
-            else
-            {
-                print("WARNING: No parent canvas found for ground coffee!");
-            }
-            
-            // Setup the coffee
-            print($"Setting grind size to {size}");
-            currentGroundCoffee.SetGrindSize(size);
-            
-            // Use the config values for ground coffee amounts if available
-            if (config != null && currentGroundCoffee != null)
-            {
-                float amountBySize = 6f; // Default fallback value
-                
-                switch (size)
-                {
-                    case GroundCoffee.GrindSize.Small:
-                        amountBySize = config.groundCoffeeSizes.Length > 0 ? config.groundCoffeeSizes[0] : 6f;
-                        break;
-                    case GroundCoffee.GrindSize.Medium:
-                        amountBySize = config.groundCoffeeSizes.Length > 1 ? config.groundCoffeeSizes[1] : 12f;
-                        break;
-                    case GroundCoffee.GrindSize.Large:
-                        amountBySize = config.groundCoffeeSizes.Length > 2 ? config.groundCoffeeSizes[2] : 18f;
-                        break;
-                }
-                
-                // Set the amount on the ground coffee
-                currentGroundCoffee.SetAmount(amountBySize);
-            }
-            
-            // Position properly
-            RectTransform coffeeRect = coffeeObj.GetComponent<RectTransform>();
-            if (coffeeRect != null)
-            {
-                coffeeRect.anchoredPosition = Vector2.zero;
-                
-                // Add appearance animation
-                coffeeRect.localScale = Vector3.zero;
-                coffeeRect.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
-                
-                print("Ground coffee created and positioned successfully!");
-            }
-            else
-            {
-                print("ERROR: Ground coffee prefab does not have a RectTransform component!");
-                Destroy(coffeeObj);
-                isProcessingGrinding = false;
-                yield break;
-            }
-            
-            UIManager.Instance.ShowNotification("Ground coffee created!");
-        }
-        catch (System.Exception e)
-        {
-            print($"ERROR creating ground coffee: {e.Message}");
-        }
-        
-        isProcessingGrinding = false;
+        return 6f;
     }
     
-    private void UpdateBeansVisual()
+    /// <summary>
+    /// Handle spin feedback (visual/audio)
+    /// </summary>
+    private void HandleSpinFeedback(int spinCount)
     {
-        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
+        // You can add additional feedback here if needed
+        Debug.Log($"Service spin count: {spinCount}");
+    }
+    
+    protected override void HandleUpgradeApplied(int level)
+    {
+        base.HandleUpgradeApplied(level);
         
-        print($"Updating beans visual. Current: {currentBeanFills}, Max: {maxFills}");
-        
-        if (beansLevelImage != null)
+        // Update UI based on upgrade level
+        if (grindHandle != null)
         {
-            float fillAmount = (float)currentBeanFills / maxFills;
-            print($"Setting fill amount to {fillAmount}");
-            beansLevelImage.fillAmount = fillAmount;
+            grindHandle.gameObject.SetActive(level == 0 && (keepHandleAlwaysVisible || service.HasBeans));
         }
-        else
+        
+        if (grindButton != null)
         {
-            print("WARNING: beansLevelImage is null!");
+            grindButton.gameObject.SetActive(level >= 1);
         }
     }
     
+    private void Update()
+    {
+        // Check for auto-processing at level 2
+        if (service != null && service.UpgradeLevel >= 2)
+        {
+            service.CheckAutoProcess();
+        }
+    }
+    
+    // Public methods for external access
     public void OnGroundCoffeeRemoved()
     {
-        print("Ground coffee removed from output zone");
         currentGroundCoffee = null;
+        service?.OnGroundCoffeeRemoved();
     }
     
-    // For debugging - add a test button to call this
-    public void TestAddBean()
-    {
-        print("Test button: Adding 1 bean");
-        AddBeans(1);
-    }
-    
-    // For debugging - shows how many beans are currently in the grinder
-    public void DebugShowBeanCount()
-    {
-        int maxFills = config != null ? config.maxBeanFills : 3; // Fallback if config missing
-        print($"DEBUG: Current bean count is {currentBeanFills}");
-        UIManager.Instance.ShowNotification($"Bean count: {currentBeanFills}/{maxFills}");
-    }
-    
-    // Support for upgrades
-    public void SetUpgradeLevel(int level)
-    {
-        currentUpgradeLevel = level;
-        
-        // Additional logic for handling upgrade levels will be added later
-        // This is just the placeholder for the upgrade system
-    }
+    public bool CanAddBeans => service?.CanAddBeans ?? false;
+    public int CurrentBeanCount => service?.CurrentBeanFills ?? 0;
+    public int MaxBeanCount => service?.MaxBeanFills ?? 3;
 }

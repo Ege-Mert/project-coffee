@@ -69,6 +69,9 @@ public class GameManager : MonoBehaviour
         
         // Show end of day screen
         UIManager.Instance.ShowEndOfDayScreen();
+        
+        // Show upgrade screen for between-day purchases
+        UIManager.Instance.ShowUpgradeScreen();
     }
     
     public void AddMoney(int amount)

@@ -6,7 +6,6 @@ using UnityEngine;
 public class PortafilterDropZone : DropZone
 {
     [SerializeField] private CoffeeGrammingMachine parentMachine;
-    [SerializeField] private bool debugLogs = true;
     
     private Portafilter currentPortafilter;
     
@@ -14,13 +13,13 @@ public class PortafilterDropZone : DropZone
     {
         // CRITICAL: Set the accept predicate in Awake to override any settings from the inspector
         AcceptPredicate = (item) => item is Portafilter;
-        LogDebug("PortafilterDropZone initialized: Accept predicate set");
+        base.LogDebug("PortafilterDropZone initialized: Accept predicate set");
     }
     
     private void Start()
     {
         // Double check that our accept predicate is properly set
-        LogDebug($"PortafilterDropZone started. AcceptPredicate is set: {AcceptPredicate != null}");
+        base.LogDebug($"PortafilterDropZone started. AcceptPredicate is set: {AcceptPredicate != null}");
     }
     
     public override bool CanAccept(Draggable item)
@@ -28,7 +27,7 @@ public class PortafilterDropZone : DropZone
         bool baseAccept = isActive; // Skip the base.CanAccept check which causes problems
         bool isPortafilter = item is Portafilter;
         
-        LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, isPortafilter={isPortafilter}");
+        base.LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, isPortafilter={isPortafilter}");
         
         return isActive && isPortafilter;
     }
@@ -40,7 +39,7 @@ public class PortafilterDropZone : DropZone
         
         if (item == null) return;
         
-        LogDebug($"OnItemDropped: Handling {item.name}");
+        base.LogDebug($"OnItemDropped: Handling {item.name}");
         
         RectTransform itemRect = item.GetComponent<RectTransform>();
         if (itemRect == null) return;
@@ -58,17 +57,17 @@ public class PortafilterDropZone : DropZone
         // Track the current portafilter
         currentPortafilter = item as Portafilter;
         
-        LogDebug($"Portafilter {item.name} successfully placed in drop zone");
+        base.LogDebug($"Portafilter {item.name} successfully placed in drop zone");
         
         // Notify the machine
         if (parentMachine != null)
         {
-            LogDebug($"Notifying machine that portafilter was placed");
+            base.LogDebug($"Notifying machine that portafilter was placed");
             parentMachine.OnPortafilterDropped(item);
         }
         else
         {
-            LogDebug("WARNING: parentMachine reference is null, cannot notify");
+            base.LogDebug("WARNING: parentMachine reference is null, cannot notify");
         }
     }
     
@@ -77,7 +76,7 @@ public class PortafilterDropZone : DropZone
     {
         if (transform.childCount == 0 && currentPortafilter != null && parentMachine != null)
         {
-            LogDebug($"Portafilter {currentPortafilter.name} was removed");
+            base.LogDebug($"Portafilter {currentPortafilter.name} was removed");
             
             // Notify the machine
             parentMachine.OnPortafilterRemoved(currentPortafilter);
@@ -87,11 +86,5 @@ public class PortafilterDropZone : DropZone
         }
     }
     
-    private void LogDebug(string message)
-    {
-        if (debugLogs)
-        {
-            Debug.Log($"[PortafilterDropZone] {message}");
-        }
-    }
+    // Remove the custom LogDebugPortafilter method entirely since we use base.LogDebug
 }

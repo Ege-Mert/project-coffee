@@ -455,6 +455,8 @@ MonoBehaviour:
   endOfDayPanel: {fileID: 0}
   notificationPanel: {fileID: 0}
   notificationText: {fileID: 0}
+  upgradeUI: {fileID: 0}
+  upgradeButton: {fileID: 0}
 --- !u!4 &202207924
 Transform:
   m_ObjectHideFlags: 0
@@ -746,6 +748,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87752cc36850244409a90431ac34ddd2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
+  idleIndicator: {fileID: 0}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 0}
+  completeIndicator: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  processingParticles: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  OnProcessingStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProgressUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
   portafilterZone: {fileID: 1114903398}
   groundCoffeeZone: {fileID: 1873983885}
   grammingButton: {fileID: 1314990928}
@@ -782,12 +805,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 3
     m_NumAlphaKeys: 2
-  config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
-  coffeeParticles: {fileID: 0}
-  coffeeAddSound: {fileID: 0}
-  coffeeDispenseSound: {fileID: 0}
-  machineAnimator: {fileID: 0}
-  logDebugging: 1
 --- !u!114 &435748851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1040,7 +1057,6 @@ MonoBehaviour:
   parentMachine: {fileID: 2117398626}
   slotIndex: 0
   isPortafilterZone: 1
-  debugLogs: 1
 --- !u!114 &546816799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1294,7 +1310,6 @@ MonoBehaviour:
   parentMachine: {fileID: 2117398626}
   slotIndex: 1
   isPortafilterZone: 0
-  debugLogs: 1
 --- !u!114 &556199973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1580,6 +1595,9 @@ MonoBehaviour:
   interactionSound: {fileID: 0}
   clickSound: {fileID: 0}
   espressoMachine: {fileID: 2117398626}
+  OnClicked:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &810611443
 GameObject:
   m_ObjectHideFlags: 0
@@ -1771,7 +1789,6 @@ MonoBehaviour:
   preserveItemSize: 1
   debugLogs: 1
   parentMachine: {fileID: 435748850}
-  debugLogs: 1
 --- !u!114 &1114903399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2251,7 +2268,6 @@ MonoBehaviour:
   parentMachine: {fileID: 2117398626}
   slotIndex: 0
   isPortafilterZone: 0
-  debugLogs: 1
 --- !u!114 &1318800933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2732,7 +2748,6 @@ MonoBehaviour:
   parentMachine: {fileID: 2117398626}
   slotIndex: 1
   isPortafilterZone: 1
-  debugLogs: 1
 --- !u!114 &1536601757
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3995,11 +4010,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 978c0a624f286fc46b388612d2545973, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
+  idleIndicator: {fileID: 0}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 0}
+  completeIndicator: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  processingParticles: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  OnProcessingStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProgressUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
   beansLevelImage: {fileID: 142200152}
   grindHandle: {fileID: 1321812441}
+  grindButton: {fileID: 0}
   groundCoffeeOutputZone: {fileID: 1136698213}
   groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
-  config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
   keepHandleAlwaysVisible: 1
 --- !u!114 &2095772919
 MonoBehaviour:
@@ -4170,30 +4206,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e6eacba7dec5bf4aa3d2f1790a3e691, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brewingSlots:
+  config: {fileID: 11400000, guid: 18e4f2e467a10f340aa0cf800772580a, type: 2}
+  idleIndicator: {fileID: 0}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 0}
+  completeIndicator: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  processingParticles: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  OnProcessingStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProgressUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  brewingSlotUIs:
   - portafilterZone: {fileID: 546816798}
     cupZone: {fileID: 1318800932}
     activeIndicator: {fileID: 1479152356}
     progressFill: {fileID: 1818626161}
     currentPortafilter: {fileID: 0}
     currentCup: {fileID: 0}
-    isActive: 0
-    brewProgress: 0
-  - portafilterZone: {fileID: 1536601756}
-    cupZone: {fileID: 556199972}
-    activeIndicator: {fileID: 239556599}
-    progressFill: {fileID: 810611445}
-    currentPortafilter: {fileID: 0}
-    currentCup: {fileID: 0}
-    isActive: 0
-    brewProgress: 0
   brewButton: {fileID: 755693586}
-  config: {fileID: 11400000, guid: 18e4f2e467a10f340aa0cf800772580a, type: 2}
-  brewingParticles: {fileID: 0}
-  brewStartSound: {fileID: 0}
-  brewEndSound: {fileID: 0}
-  brewingSound: {fileID: 0}
-  machineAnimator: {fileID: 0}
 --- !u!114 &2117398627
 MonoBehaviour:
   m_ObjectHideFlags: 0

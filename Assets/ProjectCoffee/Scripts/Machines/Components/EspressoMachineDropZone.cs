@@ -9,7 +9,6 @@ public class EspressoMachineDropZone : DropZone
     [SerializeField] private EspressoMachine parentMachine;
     [SerializeField] private int slotIndex;
     [SerializeField] private bool isPortafilterZone; // True for portafilter, false for cup
-    [SerializeField] private bool debugLogs = true;
     
     private void Awake()
     {
@@ -25,7 +24,7 @@ public class EspressoMachineDropZone : DropZone
             }
         };
         
-        LogDebug($"DropZone initialized: isPortafilterZone={isPortafilterZone}");
+        base.LogDebug($"DropZone initialized: isPortafilterZone={isPortafilterZone}");
     }
     
     public override bool CanAccept(Draggable item)
@@ -42,14 +41,14 @@ public class EspressoMachineDropZone : DropZone
             canAccept = item is Cup;
         }
         
-        LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, canAccept={canAccept}");
+        base.LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, canAccept={canAccept}");
         
         return isActive && canAccept;
     }
     
     public override void OnItemDropped(Draggable item)
     {
-        LogDebug($"Item {item.name} dropped on zone");
+        base.LogDebug($"Item {item.name} dropped on zone");
         
         // Store original scale
         Vector3 originalScale = item.transform.localScale;
@@ -66,18 +65,18 @@ public class EspressoMachineDropZone : DropZone
         {
             if (isPortafilterZone && item is Portafilter)
             {
-                LogDebug($"Notifying espresso machine of portafilter at slot {slotIndex}");
+                base.LogDebug($"Notifying espresso machine of portafilter at slot {slotIndex}");
                 parentMachine.OnPortafilterDropped(slotIndex, item);
             }
             else if (!isPortafilterZone && item is Cup)
             {
-                LogDebug($"Notifying espresso machine of cup at slot {slotIndex}");
+                base.LogDebug($"Notifying espresso machine of cup at slot {slotIndex}");
                 parentMachine.OnCupDropped(slotIndex, item);
             }
         }
         else
         {
-            LogDebug("WARNING: parentMachine reference is null, cannot notify");
+            base.LogDebug("WARNING: parentMachine reference is null, cannot notify");
         }
     }
     
@@ -88,22 +87,16 @@ public class EspressoMachineDropZone : DropZone
         {
             if (isPortafilterZone)
             {
-                LogDebug($"Notifying espresso machine of portafilter removal at slot {slotIndex}");
+                base.LogDebug($"Notifying espresso machine of portafilter removal at slot {slotIndex}");
                 parentMachine.OnPortafilterRemoved(slotIndex);
             }
             else
             {
-                LogDebug($"Notifying espresso machine of cup removal at slot {slotIndex}");
+                base.LogDebug($"Notifying espresso machine of cup removal at slot {slotIndex}");
                 parentMachine.OnCupRemoved(slotIndex);
             }
         }
     }
     
-    private void LogDebug(string message)
-    {
-        if (debugLogs)
-        {
-            Debug.Log($"[EspressoMachineDropZone] {message}");
-        }
-    }
+    // Remove the custom LogDebug method entirely since we use base.LogDebug
 }

@@ -4,12 +4,23 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 /// <summary>
 /// Base class for containers that hold ingredients
 /// </summary>
 public class Container : Draggable, IContainer
 {
     protected Dictionary<string, float> contents = new Dictionary<string, float>();
+    
+    protected override void Awake()
+    {
+        base.Awake();
+        
+        // Ensure containers always return to original position on failed drops
+        returnToOriginalPositionOnFail = true;
+        
+        // Configure container-specific behavior if needed
+    }
     
     public virtual bool TryAddItem(string itemId, float amount = 1f)
     {

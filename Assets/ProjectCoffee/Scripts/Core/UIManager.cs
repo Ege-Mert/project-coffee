@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectCoffee.UI;
+
 /// <summary>
 /// UI manager for notifications and displays
 /// </summary>
@@ -15,6 +17,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject endOfDayPanel;
     [SerializeField] private GameObject notificationPanel;
     [SerializeField] private Text notificationText;
+    [SerializeField] private UpgradeUI upgradeUI;
+    [SerializeField] private Button upgradeButton;
     
     private void Awake()
     {
@@ -33,6 +37,12 @@ public class UIManager : MonoBehaviour
         GameManager.Instance.OnMoneyChanged += UpdateMoneyDisplay;
         GameManager.Instance.OnDayStarted += OnDayStarted;
         GameManager.Instance.OnDayEnded += OnDayEnded;
+        
+        // Setup upgrade button
+        if (upgradeButton != null)
+        {
+            upgradeButton.onClick.AddListener(ShowUpgradeScreen);
+        }
         
         UpdateMoneyDisplay(GameManager.Instance.Money);
         UpdateDayDisplay(GameManager.Instance.CurrentDay);
@@ -139,6 +149,22 @@ public class UIManager : MonoBehaviour
         if (endOfDayPanel != null)
         {
             endOfDayPanel.SetActive(false);
+        }
+    }
+    
+    public void ShowUpgradeScreen()
+    {
+        if (upgradeUI != null)
+        {
+            upgradeUI.Show();
+        }
+    }
+    
+    public void CloseUpgradeScreen()
+    {
+        if (upgradeUI != null)
+        {
+            upgradeUI.Hide();
         }
     }
 }

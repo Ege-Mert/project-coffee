@@ -10,6 +10,11 @@ public class Clickable : InteractiveElementBase, IPointerClickHandler
     [SerializeField] protected AudioSource clickSound;
     
     /// <summary>
+    /// Event that gets fired when this element is clicked
+    /// </summary>
+    public event Action OnClicked;
+    
+    /// <summary>
     /// Called when the UI element is clicked
     /// </summary>
     public virtual void OnPointerClick(PointerEventData eventData)
@@ -28,6 +33,7 @@ public class Clickable : InteractiveElementBase, IPointerClickHandler
         
         OnInteractionStart();
         OnClick();
+        OnClicked?.Invoke(); // Fire the public event
         OnInteractionEnd();
     }
     

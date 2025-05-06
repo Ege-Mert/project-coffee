@@ -22,6 +22,10 @@ public class GroundCoffee : Draggable
     protected override void Awake()
     {
         base.Awake();
+        
+        // Ensure ground coffee always returns to original position on failed drops
+        returnToOriginalPositionOnFail = true;
+        
         UpdateVisual();
         
         // Debug check for sprites

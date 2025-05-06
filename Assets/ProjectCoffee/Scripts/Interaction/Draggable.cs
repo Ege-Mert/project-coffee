@@ -92,7 +92,7 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         originalPosition = rectTransform.anchoredPosition;
         originalParent = transform.parent;
         
-        DebugLog($"Saved original state for {gameObject.name}: Position={originalPosition}, Parent={originalParent?.name ?? "null"}");
+        DebugLog($"Saved original state for {gameObject.name}: Position={originalPosition}, Parent={originalParent?.name ?? "null"}, Parent Position: {originalParent?.position}");
     }
     
     public virtual void OnBeginDrag(PointerEventData eventData)
@@ -122,9 +122,6 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         canvasGroup.alpha = 0.8f;
         canvasGroup.blocksRaycasts = false;
         
-        // Move to the top of the hierarchy for proper rendering order
-        transform.SetAsLastSibling();
-        
         // Play sound
         if (dragSound != null && dragSound.isActiveAndEnabled)
         {
@@ -138,14 +135,15 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
             return;
         
         // Update position based on mouse/touch movement
-        // Converting to anchored position for proper UI positioning
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentCanvas.transform as RectTransform,
-            eventData.position,
-            parentCanvas.worldCamera,
-            out Vector2 localPosition);
-        
-        rectTransform.position = parentCanvas.transform.TransformPoint(localPosition);
+        Vector3 worldPoint;
+        if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+            parentCanvas.transform as RectTransform, 
+            eventData.position, 
+            eventData.pressEventCamera, 
+            out worldPoint))
+        {
+            rectTransform.position = worldPoint;
+        }
     }
     
     public virtual void OnEndDrag(PointerEventData eventData)
@@ -161,6 +159,7 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
         
+        // Check if we dropped on a valid drop zone
         bool validDropPerformed = false;
         DropZone dropZone = null;
         
@@ -189,15 +188,12 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
                 
                 if (canAccept)
                 {
-                    DebugLog($"Calling OnItemDropped on {dropZone.name}");
-                    dropZone.OnItemDropped(this);
+                    // Mark as valid drop since the zone accepted it
                     validDropPerformed = true;
                     
-                    // Play sound
-                    if (dropSound != null && dropSound.isActiveAndEnabled)
-                    {
-                        dropSound.Play();
-                    }
+                    // Let the DropZone's OnDrop method handle the actual drop logic
+                    // OnDrop is called automatically by Unity's EventSystem
+                    // We don't need to call OnItemDropped here to avoid double processing
                 }
                 else
                 {
@@ -235,20 +231,25 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         }
         
         DebugLog($"Returning {gameObject.name} to original position: {originalPosition} under parent {originalParent.name}");
+        DebugLog($"Current position before return: {rectTransform.anchoredPosition}, Current parent: {transform.parent?.name}");
         
-        // Return to original parent if not already there
+        // First, return to original parent
         transform.SetParent(originalParent);
         
-        // Immediately set the position to make sure it takes effect
-        rectTransform.anchoredPosition = originalPosition;
-        
-        // Then animate it slightly to give feedback
-        rectTransform.DOPunchPosition(Vector3.one * 5f, 0.3f, 10, 1f)
-            .OnComplete(() => {
-                DebugLog($"{gameObject.name} returned to original position");
-                // Make sure the position is correct after animation
-                rectTransform.anchoredPosition = originalPosition;
-            });
+        // Then restore position
+        if (rectTransform != null)
+        {
+            // Reset the local position and anchored position
+            rectTransform.anchoredPosition = originalPosition;
+            rectTransform.localPosition = rectTransform.anchoredPosition; // Ensure local position matches
+            
+            // Optional: Add some animation feedback
+            rectTransform.DOScale(Vector3.one * 1.1f, 0.1f)
+                .SetLoops(2, LoopType.Yoyo)
+                .OnComplete(() => {
+                    DebugLog($"{gameObject.name} returned to original position: {rectTransform.anchoredPosition}");
+                });
+        }
     }
     
     protected virtual bool CanInteract()

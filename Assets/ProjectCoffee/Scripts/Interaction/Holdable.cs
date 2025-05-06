@@ -87,14 +87,20 @@ public class Holdable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     
     public virtual void OnPointerDown(PointerEventData eventData)
     {
-        // IMPORTANT: Using the explicit interface check instead of our custom function
-        if (!((IInteractiveElement)this).CanInteract())
+        Debug.Log($"OnPointerDown on {gameObject.name}, isActive: {isActive}");
+        
+        // Check if we can interact using our delegate
+        bool canInteractResult = CanInteract?.Invoke() ?? true;
+        
+        Debug.Log($"CanInteract delegate result: {canInteractResult}");
+        
+        if (!isActive || !canInteractResult)
         {
-            Debug.Log($"Hold prevented on {gameObject.name}: CanInteract returned false");
+            Debug.Log($"Hold prevented on {gameObject.name}: isActive={isActive}, CanInteract={canInteractResult}");
             return;
         }
         
-        Debug.Log($"OnPointerDown on {gameObject.name}, isActive: {isActive}, CustomCheck: {CanInteract()}");
+        Debug.Log($"Starting hold on {gameObject.name}");
         
         isHolding = true;
         holdStartTime = Time.time;

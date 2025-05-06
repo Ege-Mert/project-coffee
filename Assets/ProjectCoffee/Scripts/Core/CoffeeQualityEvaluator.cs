@@ -5,6 +5,16 @@ using UnityEngine;
 /// </summary>
 public class CoffeeQualityEvaluator
 {
+    /// <summary>
+    /// Quality levels for coffee dose
+    /// </summary>
+    public enum QualityLevel
+    {
+        Poor,
+        Acceptable,
+        Perfect
+    }
+    
     private float idealGramAmount;
     private float gramTolerance;
     
@@ -36,6 +46,21 @@ public class CoffeeQualityEvaluator
         float qualityFactor = 1f - Mathf.Clamp01((deviation - gramTolerance) / (maxDeviation - gramTolerance));
         
         return qualityFactor;
+    }
+    
+    /// <summary>
+    /// Get quality level based on quality factor
+    /// </summary>
+    /// <param name="qualityFactor">Quality factor between 0 and 1</param>
+    /// <returns>Quality level enum</returns>
+    public QualityLevel GetQualityLevel(float qualityFactor)
+    {
+        if (qualityFactor >= 0.9f)
+            return QualityLevel.Perfect;
+        else if (qualityFactor >= 0.5f)
+            return QualityLevel.Acceptable;
+        else
+            return QualityLevel.Poor;
     }
     
     /// <summary>

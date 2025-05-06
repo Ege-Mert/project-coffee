@@ -1,357 +1,312 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectCoffee.Services;
+using ProjectCoffee.Machines;
+using System.Collections;
+using System.Collections.Generic;
+
 /// <summary>
-/// Espresso machine for brewing coffee
+/// Refactored espresso machine that uses service pattern for logic
 /// </summary>
-public class EspressoMachine : MonoBehaviour
+public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineConfig>
 {
     [System.Serializable]
-    public class BrewingSlot
+    public class BrewingSlotUI
     {
         public DropZone portafilterZone;
         public DropZone cupZone;
         public GameObject activeIndicator;
         public Image progressFill;
-        public Portafilter currentPortafilter;
-        public Cup currentCup;
-        public bool isActive = false;
-        public float brewProgress = 0f;
+        [HideInInspector] public Portafilter currentPortafilter;
+        [HideInInspector] public Cup currentCup;
     }
     
-    [Header("References")]
-    [SerializeField] private List<BrewingSlot> brewingSlots = new List<BrewingSlot>();
+    [Header("Espresso Machine Specific UI")]
+    [SerializeField] private List<BrewingSlotUI> brewingSlotUIs = new List<BrewingSlotUI>();
     [SerializeField] private BrewButton brewButton;
     
-    [Header("Configuration")]
-    [SerializeField] private EspressoMachineConfig config;
+    private Dictionary<int, Coroutine> brewingCoroutines = new Dictionary<int, Coroutine>();
     
-    [Header("Effects")]
-    [SerializeField] private ParticleSystem brewingParticles;
-    [SerializeField] private AudioSource brewStartSound;
-    [SerializeField] private AudioSource brewEndSound;
-    [SerializeField] private AudioSource brewingSound;
-    [SerializeField] private Animator machineAnimator;
-    
-    private int currentUpgradeLevel = 0;
-    private float currentBrewTime;
-    
-    private void Awake()
+    protected override void InitializeService()
     {
-        // Validate config
-        if (config == null)
+        service = new EspressoMachineService(config as EspressoMachineConfig);
+    }
+    
+    protected override void Start()
+    {
+        base.Start();
+        
+        // Setup UI elements
+        ConfigureDropZones();
+        ConfigureBrewButton();
+        
+        // Subscribe to espresso-specific events
+        if (service != null)
         {
-            Debug.LogError("EspressoMachineConfig is not assigned! Using default values.");
-            currentBrewTime = 5f; // Default brew time
+            service.OnSlotStateChanged += HandleSlotStateChanged;
+            service.OnSlotProgressChanged += HandleSlotProgressChanged;
+            service.OnBrewingCompleted += HandleBrewingCompleted;
         }
-        else
+        
+        UpdateAllSlotVisuals();
+    }
+    
+    private void ConfigureDropZones()
+    {
+        for (int i = 0; i < brewingSlotUIs.Count; i++)
         {
-            currentBrewTime = config.level0BrewTime;
+            BrewingSlotUI slotUI = brewingSlotUIs[i];
+            int slotIndex = i; // Capture for closure
+            
+            if (slotUI.portafilterZone != null)
+            {
+                slotUI.portafilterZone.AcceptPredicate = (item) => 
+                {
+                    bool isPortafilter = item is Portafilter;
+                    bool slotNotActive = !service.GetSlot(slotIndex)?.isActive ?? true;
+                    bool noCurrent = slotUI.currentPortafilter == null;
+                    bool canAccept = isPortafilter && slotNotActive && noCurrent;
+                    Debug.Log($"Portafilter zone {slotIndex} accept check: {canAccept}");
+                    return canAccept;
+                };
+            }
+            
+            if (slotUI.cupZone != null)
+            {
+                slotUI.cupZone.AcceptPredicate = (item) => 
+                {
+                    bool isCup = item is Cup;
+                    bool slotNotActive = !service.GetSlot(slotIndex)?.isActive ?? true;
+                    bool noCurrent = slotUI.currentCup == null;
+                    bool canAccept = isCup && slotNotActive && noCurrent;
+                    Debug.Log($"Cup zone {slotIndex} accept check: {canAccept}");
+                    return canAccept;
+                };
+            }
+            
+            // Initialize indicators
+            if (slotUI.activeIndicator != null)
+            {
+                slotUI.activeIndicator.SetActive(false);
+            }
+            
+            if (slotUI.progressFill != null)
+            {
+                slotUI.progressFill.fillAmount = 0f;
+            }
         }
     }
     
-    private void Start()
+    private void ConfigureBrewButton()
     {
-        // Set up slots
-        foreach (BrewingSlot slot in brewingSlots)
+        if (brewButton != null)
         {
-            if (slot.activeIndicator != null)
-            {
-                slot.activeIndicator.SetActive(false);
-            }
-            
-            if (slot.portafilterZone != null)
-            {
-                // Configure portafilter drop zone
-                slot.portafilterZone.AcceptPredicate = (item) => 
-                !slot.isActive && item is Portafilter && slot.currentPortafilter == null;
-                
-                // For simulation only, in a real implementation use event delegates
-                // Connect the drop zone's OnDrop to our handler in the Inspector
-            }
-            
-            if (slot.cupZone != null)
-            {
-                // Configure cup drop zone
-                slot.cupZone.AcceptPredicate = (item) => 
-                !slot.isActive && item is Cup && slot.currentCup == null;
-                
-                // For simulation only, in a real implementation use event delegates
-                // Connect the drop zone's OnDrop to our handler in the Inspector
-            }
-            
-            if (slot.progressFill != null)
-            {
-                slot.progressFill.fillAmount = 0f;
-            }
+            brewButton.CanInteractCustomCheck = () => service?.CanBrewAnySlot() ?? false;
+            brewButton.OnClicked.AddListener(OnBrewButtonClicked);
+        }
+    }
+    
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        
+        // Unsubscribe from events
+        if (service != null)
+        {
+            service.OnSlotStateChanged -= HandleSlotStateChanged;
+            service.OnSlotProgressChanged -= HandleSlotProgressChanged;
+            service.OnBrewingCompleted -= HandleBrewingCompleted;
         }
         
-        // brewButton.CanInteractCheck = () => {
-        //     Debug.Log("Checking if brew button can be interacted with...");
-        //     bool canInteract = false;
-        //     for (int i = 0; i < brewingSlots.Count; i++) {
-        //         bool slotCanBrew = CanBrewSlot(i);
-        //         Debug.Log($"Slot {i} can brew: {slotCanBrew}");
-        //         if (slotCanBrew) canInteract = true;
-        //     }
-        //     Debug.Log($"Brew button interactable: {canInteract}");
-        //     return canInteract;
-        // };
-
-        brewButton.CanInteractCustomCheck = () => {
-            Debug.Log("Checking if brew button can be interacted with...");
-            bool canInteract = false;
-            for (int i = 0; i < brewingSlots.Count; i++) {
-                bool slotCanBrew = CanBrewSlot(i);
-                Debug.Log($"Slot {i} can brew: {slotCanBrew}");
-                if (slotCanBrew) canInteract = true;
-            }
-            Debug.Log($"Brew button interactable: {canInteract}");
-            return canInteract;
-        };
-        
-        if (brewingParticles != null)
+        if (brewButton != null)
         {
-            brewingParticles.Stop();
-        }
-        
-        if (brewingSound != null)
-        {
-            brewingSound.Stop();
+            brewButton.OnClicked.RemoveListener(OnBrewButtonClicked);
         }
     }
     
     private void Update()
     {
-        // Update brewing slots
-        for (int i = 0; i < brewingSlots.Count; i++)
-        {
-            BrewingSlot slot = brewingSlots[i];
-            
-            // Skip if not active
-            if (!slot.isActive)
-                continue;
-                
-            // Update brewing progress
-            slot.brewProgress += Time.deltaTime / currentBrewTime;
-            
-            // Update progress fill
-            if (slot.progressFill != null)
-            {
-                slot.progressFill.fillAmount = slot.brewProgress;
-            }
-            
-            if (slot.brewProgress >= 1f)
-            {
-                // Complete brewing
-                CompleteBrewing(i);
-            }
-        }
+        CheckSlotsPresence();
         
-        // Check for items in slots (this is a simplistic approach)
-        for (int i = 0; i < brewingSlots.Count; i++)
+        // Let the service update brewing progress
+        if (service != null)
         {
-            BrewingSlot slot = brewingSlots[i];
-            
-            // Skip if active
-            if (slot.isActive)
-                continue;
-                
-            // Check for portafilter
-            if (slot.portafilterZone != null && slot.portafilterZone.transform.childCount > 0 && slot.currentPortafilter == null)
-            {
-                Portafilter portafilter = slot.portafilterZone.transform.GetChild(0).GetComponent<Portafilter>();
-                if (portafilter != null)
-                {
-                    slot.currentPortafilter = portafilter;
-                }
-            }
-            else if (slot.portafilterZone != null && slot.portafilterZone.transform.childCount == 0 && slot.currentPortafilter != null)
-            {
-                slot.currentPortafilter = null;
-            }
-            
-            // Check for cup
-            if (slot.cupZone != null && slot.cupZone.transform.childCount > 0 && slot.currentCup == null)
-            {
-                Cup cup = slot.cupZone.transform.GetChild(0).GetComponent<Cup>();
-                if (cup != null)
-                {
-                    slot.currentCup = cup;
-                }
-            }
-            else if (slot.cupZone != null && slot.cupZone.transform.childCount == 0 && slot.currentCup != null)
-            {
-                slot.currentCup = null;
-            }
+            service.UpdateBrewing(Time.deltaTime);
         }
-
-        // In Update() method, add this check
-        for (int i = 0; i < brewingSlots.Count; i++) {
-            BrewingSlot slot = brewingSlots[i];
-            if (slot.isActive && slot.currentCup == null) {
-                Debug.LogWarning($"Active brewing slot {i} lost its cup reference!");
-                CompleteBrewing(i); // Force completion
+    }
+    
+    private void CheckSlotsPresence()
+    {
+        for (int i = 0; i < brewingSlotUIs.Count; i++)
+        {
+            BrewingSlotUI slotUI = brewingSlotUIs[i];
+            
+            // Check portafilter presence
+            if (slotUI.portafilterZone != null)
+            {
+                if (slotUI.portafilterZone.transform.childCount > 0 && slotUI.currentPortafilter == null)
+                {
+                    Portafilter portafilter = slotUI.portafilterZone.transform.GetChild(0).GetComponent<Portafilter>();
+                    if (portafilter != null)
+                    {
+                        slotUI.currentPortafilter = portafilter;
+                        service?.SetPortafilter(i, true, portafilter.HasGroundCoffee, portafilter.GetCoffeeQualityFactor());
+                    }
+                }
+                else if (slotUI.portafilterZone.transform.childCount == 0 && slotUI.currentPortafilter != null)
+                {
+                    slotUI.currentPortafilter = null;
+                    service?.SetPortafilter(i, false);
+                }
+            }
+            
+            // Check cup presence
+            if (slotUI.cupZone != null)
+            {
+                if (slotUI.cupZone.transform.childCount > 0 && slotUI.currentCup == null)
+                {
+                    Cup cup = slotUI.cupZone.transform.GetChild(0).GetComponent<Cup>();
+                    if (cup != null)
+                    {
+                        slotUI.currentCup = cup;
+                        service?.SetCup(i, true);
+                    }
+                }
+                else if (slotUI.cupZone.transform.childCount == 0 && slotUI.currentCup != null)
+                {
+                    slotUI.currentCup = null;
+                    service?.SetCup(i, false);
+                }
             }
         }
     }
     
-    // Called by the brew button
-    public void OnBrewButtonClick()
+    private void OnBrewButtonClicked()
     {
         Debug.Log("Brew button clicked!");
-        bool anySlotStarted = false;
+        service?.BrewAllReadySlots();
+    }
+    
+    // This method is used for backward compatibility with old BrewButton
+    public void OnBrewButtonClick()
+    {
+        OnBrewButtonClicked();
+    }
+    
+    private void HandleSlotStateChanged(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= brewingSlotUIs.Count) return;
         
-        // Start brewing for any ready slots
-        for (int i = 0; i < brewingSlots.Count; i++)
+        BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
+        EspressoMachineService.BrewingSlot slot = service.GetSlot(slotIndex);
+        
+        if (slot == null) return;
+        
+        // Update active indicator
+        if (slotUI.activeIndicator != null)
         {
-            Debug.Log($"Checking slot {i} for brewing...");
-            if (CanBrewSlot(i))
+            slotUI.activeIndicator.SetActive(slot.isActive);
+        }
+        
+        // Start or stop brewing coroutine
+        if (slot.isActive && !brewingCoroutines.ContainsKey(slotIndex))
+        {
+            if (brewingCoroutines.TryGetValue(slotIndex, out Coroutine existingCoroutine))
             {
-                Debug.Log($"Starting brewing on slot {i}");
-                StartBrewing(i);
-                anySlotStarted = true;
+                StopCoroutine(existingCoroutine);
             }
-            else
-            {
-                Debug.Log($"Slot {i} not ready for brewing");
-            }
+            brewingCoroutines[slotIndex] = StartCoroutine(BrewingVisualEffects(slotIndex));
         }
-        
-        if (!anySlotStarted)
+        else if (!slot.isActive && brewingCoroutines.ContainsKey(slotIndex))
         {
-            Debug.Log("No slots ready for brewing!");
-            UIManager.Instance.ShowNotification("No slots ready for brewing!");
+            StopCoroutine(brewingCoroutines[slotIndex]);
+            brewingCoroutines.Remove(slotIndex);
         }
     }
     
-    private bool CanBrewSlot(int slotIndex)
+    private void HandleSlotProgressChanged(int slotIndex, float progress)
     {
-        if (slotIndex < 0 || slotIndex >= brewingSlots.Count)
+        if (slotIndex < 0 || slotIndex >= brewingSlotUIs.Count) return;
+        
+        BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
+        
+        // Update progress fill
+        if (slotUI.progressFill != null)
         {
-            Debug.Log($"CanBrewSlot: Invalid slot index {slotIndex}");
-            return false;
+            slotUI.progressFill.fillAmount = progress;
         }
-        
-        BrewingSlot slot = brewingSlots[slotIndex];
-        
-        bool hasPortafilter = slot.currentPortafilter != null;
-        bool hasGroundCoffee = hasPortafilter && slot.currentPortafilter.HasGroundCoffee;
-        bool hasCup = slot.currentCup != null;
-        bool notActive = !slot.isActive;
-        
-        Debug.Log($"Slot {slotIndex} status: HasPortafilter={hasPortafilter}, HasGroundCoffee={hasGroundCoffee}, HasCup={hasCup}, NotActive={notActive}");
-        
-        return notActive && hasPortafilter && hasGroundCoffee && hasCup;
     }
     
-    private void StartBrewing(int slotIndex)
+    private void HandleBrewingCompleted(int slotIndex)
     {
-        if (!CanBrewSlot(slotIndex))
-        {
-            return;
-        }
+        if (slotIndex < 0 || slotIndex >= brewingSlotUIs.Count) return;
         
-        BrewingSlot slot = brewingSlots[slotIndex];
-        slot.isActive = true;
-        slot.brewProgress = 0f;
+        BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
+        EspressoMachineService.BrewingSlot slot = service.GetSlot(slotIndex);
         
-        if (slot.activeIndicator != null)
-        {
-            slot.activeIndicator.SetActive(true);
-        }
-        
-        if (slot.progressFill != null)
-        {
-            slot.progressFill.fillAmount = 0f;
-        }
-        
-        // Visual/audio feedback
-        if (brewingParticles != null)
-        {
-            brewingParticles.transform.position = slot.cupZone.transform.position;
-            brewingParticles.Play();
-        }
-        
-        if (brewStartSound != null)
-        {
-            brewStartSound.Play();
-        }
-        
-        if (brewingSound != null)
-        {
-            brewingSound.Play();
-        }
-        
-        if (machineAnimator != null)
-        {
-            machineAnimator.SetTrigger("StartBrew");
-        }
-        
-        UIManager.Instance.ShowNotification("Brewing espresso...");
-    }
-    
-    private void CompleteBrewing(int slotIndex)
-    {
-        BrewingSlot slot = brewingSlots[slotIndex];
-        
-        Debug.Log($"CompleteBrewing: Slot {slotIndex}, Cup: {(slot.currentCup != null ? "present" : "missing")}, Portafilter: {(slot.currentPortafilter != null ? "present" : "missing")}");
-        
-        if (slot.currentCup != null && slot.currentPortafilter != null)
+        if (slotUI.currentCup != null && slotUI.currentPortafilter != null && slot != null)
         {
             // Get the quality factor from the portafilter
-            float qualityFactor = slot.currentPortafilter.GetCoffeeQualityFactor();
+            float qualityFactor = slot.coffeeQuality;
             
-            // Get shot amount from config or use default
+            // Get shot amount from config
             float shotAmount = config != null ? 2f : 2f; // Using 2oz as default
             
             // Add espresso to the cup with quality adjusted amount
             float adjustedAmount = shotAmount * Mathf.Lerp(0.7f, 1.2f, qualityFactor);
-            Debug.Log($"CompleteBrewing: Adding {adjustedAmount} oz of espresso to cup");
+            Debug.Log($"Adding {adjustedAmount} oz of espresso to cup (quality: {qualityFactor})");
             
-            bool success = slot.currentCup.TryAddItem("espresso", adjustedAmount);
-            Debug.Log($"Cup.TryAddItem returned: {success}");
+            slotUI.currentCup.TryAddItem("espresso", adjustedAmount);
             
             // Empty the portafilter
-            slot.currentPortafilter.Clear();
+            slotUI.currentPortafilter.Clear();
             
-            // Audio feedback
-            if (brewEndSound != null)
-            {
-                brewEndSound.Play();
-            }
-            
-            if (brewingSound != null)
-            {
-                brewingSound.Stop();
-            }
-            
-            // Use quality factor for notification
+            // Feedback
             string qualityDescription = GetQualityDescription(qualityFactor);
             UIManager.Instance.ShowNotification($"{qualityDescription} espresso ready!");
         }
-        else
+        
+        // Play completion sound
+        if (processCompleteSound != null)
         {
-            Debug.LogWarning($"CompleteBrewing: Missing cup or portafilter in slot {slotIndex}");
+            processCompleteSound.Play();
+        }
+    }
+    
+    private IEnumerator BrewingVisualEffects(int slotIndex)
+    {
+        BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
+        
+        // Start effects
+        if (processingParticles != null)
+        {
+            processingParticles.transform.position = slotUI.cupZone.transform.position;
+            processingParticles.Play();
         }
         
-        // Reset the slot
-        slot.isActive = false;
-        slot.brewProgress = 0f;
-        
-        if (slot.activeIndicator != null)
+        if (processStartSound != null)
         {
-            slot.activeIndicator.SetActive(false);
+            processStartSound.Play();
         }
         
-        if (brewingParticles != null)
+        // Continue while the slot is active
+        while (service.GetSlot(slotIndex)?.isActive ?? false)
         {
-            brewingParticles.Stop();
+            yield return null;
         }
         
-        if (machineAnimator != null)
+        // Stop effects
+        if (processingParticles != null)
         {
-            machineAnimator.SetTrigger("StopBrew");
+            processingParticles.Stop();
+        }
+    }
+    
+    private void UpdateAllSlotVisuals()
+    {
+        for (int i = 0; i < brewingSlotUIs.Count; i++)
+        {
+            HandleSlotStateChanged(i);
         }
     }
     
@@ -369,81 +324,56 @@ public class EspressoMachine : MonoBehaviour
             return "Poor";
     }
     
-    // Methods to be connected in the Inspector for drop zones
-    
-    // Called by portafilter drop zone
+    // Public methods for drop zones to call
     public void OnPortafilterDropped(int slotIndex, Draggable item)
     {
-        if (slotIndex >= 0 && slotIndex < brewingSlots.Count && item is Portafilter portafilter)
+        if (slotIndex >= 0 && slotIndex < brewingSlotUIs.Count && item is Portafilter portafilter)
         {
-            brewingSlots[slotIndex].currentPortafilter = portafilter;
+            brewingSlotUIs[slotIndex].currentPortafilter = portafilter;
+            service?.SetPortafilter(slotIndex, true, portafilter.HasGroundCoffee, portafilter.GetCoffeeQualityFactor());
             
             UIManager.Instance.ShowNotification("Portafilter placed in espresso machine");
         }
     }
     
-    // Called by portafilter drop zone
     public void OnPortafilterRemoved(int slotIndex)
     {
-        if (slotIndex >= 0 && slotIndex < brewingSlots.Count)
+        if (slotIndex >= 0 && slotIndex < brewingSlotUIs.Count)
         {
-            brewingSlots[slotIndex].currentPortafilter = null;
+            brewingSlotUIs[slotIndex].currentPortafilter = null;
+            service?.SetPortafilter(slotIndex, false);
         }
     }
     
-    // Called by cup drop zone
     public void OnCupDropped(int slotIndex, Draggable item)
     {
-        if (slotIndex >= 0 && slotIndex < brewingSlots.Count && item is Cup cup)
+        if (slotIndex >= 0 && slotIndex < brewingSlotUIs.Count && item is Cup cup)
         {
-            brewingSlots[slotIndex].currentCup = cup;
+            brewingSlotUIs[slotIndex].currentCup = cup;
+            service?.SetCup(slotIndex, true);
             
             UIManager.Instance.ShowNotification("Cup placed in espresso machine");
         }
     }
     
-    // Called by cup drop zone
     public void OnCupRemoved(int slotIndex)
     {
-        if (slotIndex >= 0 && slotIndex < brewingSlots.Count)
+        if (slotIndex >= 0 && slotIndex < brewingSlotUIs.Count)
         {
-            brewingSlots[slotIndex].currentCup = null;
+            brewingSlotUIs[slotIndex].currentCup = null;
+            service?.SetCup(slotIndex, false);
         }
     }
     
-    /// <summary>
-    /// Set the upgrade level of the espresso machine
-    /// </summary>
-    public void SetUpgradeLevel(int level)
+    protected override void HandleUpgradeApplied(int level)
     {
-        if (config == null) return;
+        base.HandleUpgradeApplied(level);
         
-        currentUpgradeLevel = level;
-        
-        // Apply level-specific settings
-        switch (level)
+        // Handle slot count changes for level 2
+        if (level >= 2 && config is EspressoMachineConfig espressoConfig)
         {
-            case 0:
-                currentBrewTime = config.level0BrewTime;
-                break;
-                
-            case 1:
-                currentBrewTime = config.level1BrewTime;
-                break;
-                
-            case 2:
-                currentBrewTime = config.level2BrewTime;
-                
-                // Add additional slots if needed
-                if (brewingSlots.Count == 2 && config.level2ExtraSlots > 0)
-                {
-                    // This would be handled differently in a real implementation
-                    // through prefab instantiation or enabling existing slots
-                    Debug.Log("Level 2 upgrade unlocks additional brewing slots!");
-                }
-                break;
+            // This would be implemented to enable/disable slots as needed
+            Debug.Log($"Espresso machine upgraded to level {level}. Additional slots may be available.");
         }
-        
-        Debug.Log($"Espresso machine upgraded to level {level}. New brew time: {currentBrewTime}s");
     }
 }
