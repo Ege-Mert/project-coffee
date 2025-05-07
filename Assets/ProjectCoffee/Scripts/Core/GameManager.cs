@@ -4,10 +4,14 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ProjectCoffee.Core;
+using ProjectCoffee.Core.Services;
+using ProjectCoffee.Services.Interfaces;
+
 /// <summary>
 /// Main game manager
 /// </summary>
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviour, IGameService
 {
     private static GameManager _instance;
     public static GameManager Instance => _instance;
@@ -25,9 +29,7 @@ public class GameManager : MonoBehaviour
     public int CurrentDay => currentDay;
     public bool IsDayActive => isDayActive;
     
-    public event Action<int> OnMoneyChanged;
-    public event Action<int> OnDayStarted;
-    public event Action<int> OnDayEnded;
+    // Events are now handled through EventBus
     
     private void Awake()
     {
@@ -58,26 +60,40 @@ public class GameManager : MonoBehaviour
     {
         isDayActive = true;
         dayTimer = 0;
-        OnDayStarted?.Invoke(currentDay);
+        EventBus.NotifyDayStarted(currentDay);
     }
     
     public void EndDay()
     {
         isDayActive = false;
         currentDay++;
-        OnDayEnded?.Invoke(currentDay - 1);
+        EventBus.NotifyDayEnded(currentDay - 1);
         
-        // Show end of day screen
-        UIManager.Instance.ShowEndOfDayScreen();
-        
-        // Show upgrade screen for between-day purchases
-        UIManager.Instance.ShowUpgradeScreen();
+        // Show end of day screen and upgrade screen
+        // Try to use UI service if available
+        var uiService = ServiceLocator.Instance.GetService<IUIService>();
+        if (uiService != null)
+        {
+            uiService.ShowEndOfDayScreen();
+            uiService.ShowUpgradeScreen();
+        }
+        // Fall back to UIManager singleton if necessary
+        else if (UIManager.Instance != null) 
+        {
+            UIManager.Instance.ShowEndOfDayScreen();
+            UIManager.Instance.ShowUpgradeScreen();
+        }
+        // If neither is available, log an error
+        else
+        {
+            Debug.LogError("Cannot show end of day screens: No UI service available");
+        }
     }
     
     public void AddMoney(int amount)
     {
         money += amount;
-        OnMoneyChanged?.Invoke(money);
+        EventBus.NotifyMoneyChanged(money);
     }
     
     public bool TrySpendMoney(int amount)
@@ -85,7 +101,7 @@ public class GameManager : MonoBehaviour
         if (money >= amount)
         {
             money -= amount;
-            OnMoneyChanged?.Invoke(money);
+            EventBus.NotifyMoneyChanged(money);
             return true;
         }
         

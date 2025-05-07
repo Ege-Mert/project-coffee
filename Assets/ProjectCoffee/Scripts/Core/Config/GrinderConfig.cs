@@ -19,5 +19,5 @@ public class GrinderConfig : MachineConfig
     public float level1GrindTime = 3f;
     
     [Header("Level 2 Settings")]
-    public float level2AutoCheckInterval = 1f;
+    public float level2GrindTime = 1.5f; // Shorter grinding time for automatic level
 }

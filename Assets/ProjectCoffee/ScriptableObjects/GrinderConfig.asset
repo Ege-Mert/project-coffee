@@ -12,16 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6491edc6eb5090d41895aa80e817b0ed, type: 3}
   m_Name: GrinderConfig
   m_EditorClassIdentifier: 
-  machineId: Grinder_01
-  displayName: Grinder
+  machineId: grinder_01
+  displayName: Coffee Grinder
   maxUpgradeLevel: 2
-  baseProcessTime: 3
+  baseProcessTime: 1
   upgradeLevels:
-  - upgradeName: 
-    description: 
-    upgradeCost: 0
-    processTimeMultiplier: 0
-    interactionType: 0
+  - upgradeName: Semi-Automatic Grinder
+    description: Press button to grind beans
+    upgradeCost: 100
+    processTimeMultiplier: 0.8
+    interactionType: 1
+    upgradeIcon: {fileID: 0}
+  - upgradeName: Automatic Grinder
+    description: Beans are ground automatically
+    upgradeCost: 250
+    processTimeMultiplier: 0.5
+    interactionType: 4
     upgradeIcon: {fileID: 0}
   maxBeanFills: 3
   spinsPerStage: 1
@@ -31,4 +37,4 @@ MonoBehaviour:
   - 18
   level0SpinsRequired: 3
   level1GrindTime: 3
-  level2AutoCheckInterval: 1
+  level2GrindTime: 1.5

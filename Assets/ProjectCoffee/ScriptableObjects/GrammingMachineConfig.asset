@@ -17,11 +17,23 @@ MonoBehaviour:
   maxUpgradeLevel: 2
   baseProcessTime: 3
   upgradeLevels:
-  - upgradeName: 
+  - upgradeName: Manual Dosaging
     description: 
     upgradeCost: 0
     processTimeMultiplier: 0
     interactionType: 2
+    upgradeIcon: {fileID: 0}
+  - upgradeName: Semi-Automatic Dosaging
+    description: 
+    upgradeCost: 0
+    processTimeMultiplier: 0
+    interactionType: 1
+    upgradeIcon: {fileID: 0}
+  - upgradeName: Automatic Dosaging
+    description: 
+    upgradeCost: 0
+    processTimeMultiplier: 0
+    interactionType: 4
     upgradeIcon: {fileID: 0}
   grammingRate: 2
   idealGramAmount: 18

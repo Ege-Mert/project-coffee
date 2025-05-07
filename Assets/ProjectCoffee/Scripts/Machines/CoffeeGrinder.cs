@@ -1,9 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Services;
+using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Core.Services;
 using System.Collections;
 using DG.Tweening;
+using TMPro;
+using UnityEngine.Events;
 
 /// <summary>
 /// Refactored coffee grinder that uses service pattern for logic
@@ -13,7 +17,7 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
     [Header("Grinder Specific UI")]
     [SerializeField] private Image beansLevelImage;
     [SerializeField] private Spinnable grindHandle;
-    [SerializeField] private Clickable grindButton; // For level 1+ upgrade
+    [SerializeField] private Button grindButton; // Changed from Clickable to standard Button
     [SerializeField] private GroundCoffeeOutputZone groundCoffeeOutputZone;
     [SerializeField] private GameObject groundCoffeePrefab;
     
@@ -32,6 +36,8 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
     {
         base.Start();
         
+        Debug.Log("CoffeeGrinder: Start method called");
+        
         // Setup grinder-specific UI elements
         SetupGrindHandle();
         SetupGrindButton();
@@ -45,6 +51,14 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
             service.OnCoffeeOutputReady += CreateGroundCoffee;
             service.OnCoffeeSizeUpgraded += UpgradeGroundCoffee;
             service.OnSpinCompleted += HandleSpinFeedback;
+        }
+        
+        // Configure button initial state
+        if (grindButton != null)
+        {
+            // Start hidden, will be shown when upgraded
+            grindButton.gameObject.SetActive(service?.UpgradeLevel >= 1);
+            Debug.Log($"CoffeeGrinder: Initial button state - active: {grindButton.gameObject.activeSelf}, upgrade level: {service?.UpgradeLevel}");
         }
     }
     
@@ -67,12 +81,27 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
     {
         if (grindButton != null)
         {
-            // Start hidden, will be shown when upgraded
-            grindButton.gameObject.SetActive(false);
-            grindButton.OnClicked += OnGrindButtonClicked;
+            Debug.Log("CoffeeGrinder: Setting up grind button");
             
-            // Set interaction check
-            grindButton.CanInteractCustomCheck = () => service.HasBeans && service.UpgradeLevel >= 1;
+            // Remove any existing listeners to avoid duplicates
+            grindButton.onClick.RemoveAllListeners();
+            
+            // Add click listener
+            grindButton.onClick.AddListener(OnGrindButtonClicked);
+            
+            // Set interactability based on service state
+            bool hasService = service != null;
+            bool hasBeans = hasService && service.HasBeans;
+            bool correctLevel = hasService && service.UpgradeLevel >= 1;
+            bool canInteract = hasService && hasBeans && correctLevel;
+            
+            grindButton.interactable = canInteract;
+            
+            Debug.Log($"CoffeeGrinder: Button setup - hasService: {hasService}, hasBeans: {hasBeans}, correctLevel: {correctLevel}, canInteract: {canInteract}");
+        }
+        else
+        {
+            Debug.LogWarning("CoffeeGrinder: grindButton is null in SetupGrindButton!");
         }
     }
     
@@ -104,7 +133,7 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
         
         if (grindButton != null)
         {
-            grindButton.OnClicked -= OnGrindButtonClicked;
+            grindButton.onClick.RemoveListener(OnGrindButtonClicked);
         }
     }
     
@@ -130,52 +159,144 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
     /// </summary>
     private void OnGrindButtonClicked()
     {
-        service?.OnButtonPressed();
+        Debug.Log("CoffeeGrinder: OnGrindButtonClicked called");
         
-        // Start processing coroutine for level 1+
-        if (service.UpgradeLevel >= 1 && service.CurrentState == MachineState.Processing)
+        if (service == null)
         {
-            if (processingCoroutine != null)
-            {
-                StopCoroutine(processingCoroutine);
-            }
-            processingCoroutine = StartCoroutine(ProcessGrinding());
+            Debug.LogError("CoffeeGrinder: OnGrindButtonClicked - Service is null!");
+            return;
         }
+        
+        // Verify we have beans to grind
+        if (!service.HasBeans)
+        {
+            Debug.LogWarning("CoffeeGrinder: Cannot grind - no beans!");
+            return;
+        }
+        
+        // Disable button immediately to prevent multiple clicks
+        if (grindButton != null)
+        {
+            grindButton.interactable = false;
+        }
+        
+        // Start a direct coroutine for a more reliable approach
+        StartCoroutine(DirectGrindingProcess());
     }
     
     /// <summary>
-    /// Processing coroutine for timed grinding (Level 1+)
+    /// Add manual method to grind in case the button fails
     /// </summary>
-    private IEnumerator ProcessGrinding()
+    public void GrindButtonClick()
     {
-        float elapsedTime = 0f;
+        Debug.Log("CoffeeGrinder: GrindButtonClick manual method called");
+        OnGrindButtonClicked();
+    }
+    
+    /// <summary>
+    /// A more direct grinding process that bypasses some of the event chain
+    /// </summary>
+    private IEnumerator DirectGrindingProcess()
+    {
+        Debug.Log("CoffeeGrinder: Starting DirectGrindingProcess");
         
-        // Start effects
-        if (processingParticles != null)
+        // Disable button for the entire grinding process
+        if (grindButton != null)
         {
-            processingParticles.Play();
+            grindButton.interactable = false;
         }
         
-        if (processStartSound != null)
+        // Check if output zone is already at maximum capacity
+        bool outputFull = currentGroundCoffee != null && 
+                          currentGroundCoffee.GetGrindSize() == GroundCoffee.GrindSize.Large;
+        
+        if (outputFull)
         {
-            processStartSound.Play();
+            Debug.Log("CoffeeGrinder: Cannot grind - output zone has maximum size coffee");
+            UIManager.Instance.ShowNotification("Output zone full! Remove coffee first.");
+            
+            // Wait a moment before re-enabling button
+            yield return new WaitForSeconds(0.5f);
+            
+            // Re-enable button
+            if (grindButton != null)
+            {
+                grindButton.interactable = service != null && service.HasBeans;
+            }
+            
+            yield break; // Exit the coroutine
         }
         
-        // Update loop
-        while (service.CurrentState == MachineState.Processing)
+        // Process ALL beans continuously for level 1
+        while (service != null && service.HasBeans)
         {
-            elapsedTime += Time.deltaTime;
-            service.ProcessUpdate(Time.deltaTime);
-            yield return null;
+            // Check if coffee became max size during processing
+            if (currentGroundCoffee != null && 
+                currentGroundCoffee.GetGrindSize() == GroundCoffee.GrindSize.Large)
+            {
+                Debug.Log("CoffeeGrinder: Coffee reached maximum size, stopping processing");
+                break;
+            }
+            
+            // Tell the service we're starting to process
+            service.OnButtonPressed();
+            
+            // Get grind time from config
+            float grindTime = 3f; // Default fallback
+            if (config is GrinderConfig grinderConfig)
+            {
+                grindTime = service.UpgradeLevel >= 2 ? 
+                    grinderConfig.level2GrindTime : 
+                    grinderConfig.level1GrindTime;
+            }
+            
+            // Start visual effects
+            if (processingParticles != null)
+            {
+                processingParticles.Play();
+            }
+            
+            if (processStartSound != null)
+            {
+                processStartSound.Play();
+            }
+            
+            Debug.Log($"CoffeeGrinder: Grinding bean, remaining beans: {service.CurrentBeanFills}");
+            
+            // Wait for the grinding process
+            float startTime = Time.time;
+            
+            // Update progress every frame
+            while (Time.time < startTime + grindTime)
+            {
+                service.ProcessUpdate(Time.deltaTime);
+                yield return null;
+            }
+            
+            // Stop visual effects
+            if (processingParticles != null)
+            {
+                processingParticles.Stop();
+            }
+            
+            // If we still have beans, force state to Ready for next bean
+            // BUT don't update button state here
+            if (service.HasBeans)
+            {
+                service.ForceReadyState();
+                
+                // Brief pause between beans for visual feedback
+                yield return new WaitForSeconds(0.5f);
+            }
         }
         
-        // Stop effects
-        if (processingParticles != null)
+        // ONLY re-enable button at the very end of processing
+        if (grindButton != null)
         {
-            processingParticles.Stop();
+            grindButton.interactable = service != null && service.HasBeans;
         }
         
-        processingCoroutine = null;
+        Debug.Log("CoffeeGrinder: DirectGrindingProcess complete - all beans processed");
     }
     
     /// <summary>
@@ -194,6 +315,12 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
         {
             grindHandle.gameObject.SetActive(beanCount > 0);
         }
+        
+        // Update button interactability based on bean count
+        if (grindButton != null && service != null && service.UpgradeLevel >= 1)
+        {
+            grindButton.interactable = beanCount > 0;
+        }
     }
     
     /// <summary>
@@ -207,13 +334,16 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
             return;
         }
         
-        // Don't create a new one if we already have one
+        // IMPORTANT: We now allow creation even if there's an existing coffee chunk
+        // This is necessary for the direct process that bypasses events
         if (currentGroundCoffee != null)
         {
-            Debug.Log("Already have ground coffee, will upgrade instead");
+            Debug.Log("Already have ground coffee, upgrading it instead");
+            UpgradeGroundCoffee(size);
             return;
         }
         
+        Debug.Log("CoffeeGrinder: Starting ground coffee creation coroutine");
         StartCoroutine(CreateGroundCoffeeCoroutine(size));
     }
     
@@ -310,6 +440,8 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
     {
         base.HandleUpgradeApplied(level);
         
+        Debug.Log($"CoffeeGrinder: HandleUpgradeApplied called with level {level}");
+        
         // Update UI based on upgrade level
         if (grindHandle != null)
         {
@@ -318,17 +450,52 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
         
         if (grindButton != null)
         {
-            grindButton.gameObject.SetActive(level >= 1);
+            // Show button only for level 1, hide for levels 0 and 2
+            grindButton.gameObject.SetActive(level == 1);
+            // Make sure the button is interactable if there are beans
+            grindButton.interactable = service != null && service.HasBeans;
+            
+            // Re-initialize button to ensure listeners are set up
+            SetupGrindButton();
+            
+            Debug.Log($"CoffeeGrinder: Button active: {grindButton.gameObject.activeSelf}, interactable: {grindButton.interactable}");
         }
     }
     
     private void Update()
     {
-        // Check for auto-processing at level 2
-        if (service != null && service.UpgradeLevel >= 2)
+        // Only process for level 2 (automatic grinder)
+        if (service == null || service.UpgradeLevel != 2)
+            return;
+            
+        // Check if we need to start processing
+        EnsureAutomaticProcessing();
+        
+        // Continue processing if already in progress
+        if (service.CurrentState == ProjectCoffee.Services.MachineState.Processing)
         {
-            service.CheckAutoProcess();
+            service.ProcessUpdate(Time.deltaTime);
         }
+    }
+
+    /// <summary>
+    /// Ensures the automatic grinding is working properly for level 2
+    /// </summary>
+    private void EnsureAutomaticProcessing()
+    {
+        // Skip if no beans or already processing
+        if (!service.HasBeans || service.CurrentState == ProjectCoffee.Services.MachineState.Processing)
+            return;
+            
+        // Force state to Ready if needed (fixes issue when beans are already present)
+        if (service.CurrentState != ProjectCoffee.Services.MachineState.Ready)
+        {
+            Debug.Log("CoffeeGrinder: Forcing state to Ready for automatic processing");
+            service.ForceReadyState();
+        }
+        
+        // Now check for auto-processing with proper state
+        service.CheckAutoProcess();
     }
     
     // Public methods for external access

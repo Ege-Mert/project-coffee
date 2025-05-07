@@ -1,22 +1,31 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectCoffee.Services.Interfaces;
+using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Services
 {
     /// <summary>
     /// Service for managing espresso machine state and logic
     /// </summary>
-    public class EspressoMachineService : MachineService
+    public class EspressoMachineService : MachineService, IEspressoMachineService
     {
-        public class BrewingSlot
+        public class BrewingSlot : IEspressoMachineService.IBrewingSlot
         {
-            public bool isActive = false;
-            public float brewProgress = 0f;
-            public bool hasPortafilter = false;
-            public bool hasCup = false;
-            public bool hasGroundCoffee = false;
-            public float coffeeQuality = 0f;
+            private bool _isActive = false;
+            private float _brewProgress = 0f;
+            private bool _hasPortafilter = false;
+            private bool _hasCup = false;
+            private bool _hasGroundCoffee = false;
+            private float _coffeeQuality = 0f;
+            
+            public bool isActive { get => _isActive; set => _isActive = value; }
+            public float brewProgress { get => _brewProgress; set => _brewProgress = value; }
+            public bool hasPortafilter { get => _hasPortafilter; set => _hasPortafilter = value; }
+            public bool hasCup { get => _hasCup; set => _hasCup = value; }
+            public bool hasGroundCoffee { get => _hasGroundCoffee; set => _hasGroundCoffee = value; }
+            public float coffeeQuality { get => _coffeeQuality; set => _coffeeQuality = value; }
         }
 
         // Events specific to espresso machine
@@ -170,7 +179,7 @@ namespace ProjectCoffee.Services
         /// <summary>
         /// Get slot information
         /// </summary>
-        public BrewingSlot GetSlot(int slotIndex)
+        public IEspressoMachineService.IBrewingSlot GetSlot(int slotIndex)
         {
             return slots.TryGetValue(slotIndex, out BrewingSlot slot) ? slot : null;
         }

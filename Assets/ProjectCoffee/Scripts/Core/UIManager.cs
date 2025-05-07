@@ -2,21 +2,26 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.UI;
+using ProjectCoffee.Core;
+using ProjectCoffee.Services.Interfaces;
+using ProjectCoffee.Core.Services;
+using TMPro;
 
 /// <summary>
 /// UI manager for notifications and displays
 /// </summary>
-public class UIManager : MonoBehaviour
+public class UIManager : MonoBehaviour, IUIService
 {
+    // Singleton is maintained for backward compatibility but will be phased out
     private static UIManager _instance;
     public static UIManager Instance => _instance;
     
-    [SerializeField] private Text moneyText;
-    [SerializeField] private Text timeText;
-    [SerializeField] private Text dayText;
+    [SerializeField] private TMP_Text moneyText;
+    [SerializeField] private TMP_Text timeText;
+    [SerializeField] private TMP_Text dayText;
     [SerializeField] private GameObject endOfDayPanel;
     [SerializeField] private GameObject notificationPanel;
-    [SerializeField] private Text notificationText;
+    [SerializeField] private TMP_Text notificationText;
     [SerializeField] private UpgradeUI upgradeUI;
     [SerializeField] private Button upgradeButton;
     
@@ -33,10 +38,10 @@ public class UIManager : MonoBehaviour
     
     private void Start()
     {
-        // Subscribe to events
-        GameManager.Instance.OnMoneyChanged += UpdateMoneyDisplay;
-        GameManager.Instance.OnDayStarted += OnDayStarted;
-        GameManager.Instance.OnDayEnded += OnDayEnded;
+        // Subscribe to events using EventBus instead of direct references
+        EventBus.OnMoneyChanged += UpdateMoneyDisplay;
+        EventBus.OnDayStarted += OnDayStarted;
+        EventBus.OnDayEnded += OnDayEnded;
         
         // Setup upgrade button
         if (upgradeButton != null)
@@ -66,7 +71,7 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    private void UpdateMoneyDisplay(int amount)
+    public void UpdateMoneyDisplay(int amount)
     {
         if (moneyText != null)
         {
@@ -143,7 +148,16 @@ public class UIManager : MonoBehaviour
     // Start the day (connect to a start button)
     public void OnStartDayButtonClicked()
     {
-        GameManager.Instance.StartDay();
+        // Use service locator to get GameManager if possible
+        var gameManager = ServiceLocator.Instance.GetService<IGameService>();
+        if (gameManager != null)
+        {
+            gameManager.StartDay();
+        }
+        else if (GameManager.Instance != null) // Fallback
+        {
+            GameManager.Instance.StartDay();
+        }
         
         // Hide end of day panel if showing
         if (endOfDayPanel != null)
@@ -167,4 +181,34 @@ public class UIManager : MonoBehaviour
             upgradeUI.Hide();
         }
     }
+    
+    /// <summary>
+    /// Show a tooltip at a specific position
+    /// </summary>
+    public void ShowTooltip(string message, Vector2 position)
+    {
+        // Tooltip implementation would go here
+        // For now we'll just show a notification
+        ShowNotification(message);
+    }
+    
+    /// <summary>
+    /// Hide all UI screens
+    /// </summary>
+    public void HideAllScreens()
+    {
+        CloseEndOfDayScreen();
+        CloseUpgradeScreen();
+        
+        if (notificationPanel != null)
+        {
+            notificationPanel.SetActive(false);
+        }
+    }
+
+    public void ShowNotification(string message)
+    {
+        
+    }
+
 }

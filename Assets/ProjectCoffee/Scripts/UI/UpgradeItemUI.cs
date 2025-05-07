@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Core;
+using ProjectCoffee.Core.Services;
+using ProjectCoffee.Services.Interfaces;
 using System;
+using TMPro;
 
 namespace ProjectCoffee.UI
 {
@@ -11,25 +14,25 @@ namespace ProjectCoffee.UI
     public class UpgradeItemUI : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private Text machineNameText;
-        [SerializeField] private Text upgradeNameText;
-        [SerializeField] private Text descriptionText;
-        [SerializeField] private Text costText;
+        [SerializeField] private TMP_Text machineNameText;
+        [SerializeField] private TMP_Text upgradeNameText;
+        [SerializeField] private TMP_Text descriptionText;
+        [SerializeField] private TMP_Text costText;
         [SerializeField] private Image iconImage;
         [SerializeField] private Button upgradeButton;
-        [SerializeField] private Text upgradeButtonText;
+        [SerializeField] private TMP_Text upgradeButtonText;
 
         private string machineId;
-        private UpgradeManager.UpgradeData upgradeData;
+        private MachineUpgradeInfo upgradeInfo;
         private Action<string> onUpgradeClicked;
 
         /// <summary>
         /// Initialize this upgrade item
         /// </summary>
-        public void Initialize(string machineId, string machineName, UpgradeManager.UpgradeData upgrade, Action<string> clickCallback)
+        public void Initialize(string machineId, string machineName, MachineUpgradeInfo upgrade, Action<string> clickCallback)
         {
             this.machineId = machineId;
-            this.upgradeData = upgrade;
+            this.upgradeInfo = upgrade;
             this.onUpgradeClicked = clickCallback;
 
             // Set UI elements
@@ -37,16 +40,18 @@ namespace ProjectCoffee.UI
                 machineNameText.text = machineName;
 
             if (upgradeNameText != null)
-                upgradeNameText.text = upgrade.name;
+                upgradeNameText.text = upgrade.nextUpgradeName;
 
             if (descriptionText != null)
-                descriptionText.text = upgrade.description;
+                descriptionText.text = upgrade.nextUpgradeDescription;
 
             if (costText != null)
-                costText.text = $"${upgrade.cost}";
+                costText.text = $"${upgrade.nextUpgradePrice}";
 
-            if (iconImage != null && upgrade.icon != null)
-                iconImage.sprite = upgrade.icon;
+            if (iconImage != null && upgrade.nextUpgradeIcon != null)
+                iconImage.sprite = upgrade.nextUpgradeIcon;
+            else if (iconImage != null)
+                iconImage.gameObject.SetActive(false);
 
             if (upgradeButton != null)
             {
@@ -61,7 +66,20 @@ namespace ProjectCoffee.UI
         /// </summary>
         public void UpdateAffordability()
         {
-            bool canAfford = GameManager.Instance.Money >= upgradeData.cost;
+            bool canAfford = false;
+            
+            // Try to use the UpgradeService to check if we can afford it
+            var upgradeService = ServiceLocator.Instance.GetService<IUpgradeService>();
+            if (upgradeService != null)
+            {
+                canAfford = upgradeService.CanAffordUpgrade(machineId);
+            }
+            // Fallback to direct GameManager check if service isn't available
+            else if (GameManager.Instance != null)
+            {
+                int price = upgradeInfo?.nextUpgradePrice ?? 9999;
+                canAfford = GameManager.Instance.Money >= price;
+            }
             
             if (upgradeButton != null)
             {

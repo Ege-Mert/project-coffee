@@ -1,12 +1,15 @@
 using System;
 using UnityEngine;
+using ProjectCoffee.Services.Interfaces;
+using ProjectCoffee.Core.Services;
+using ProjectCoffee.Core;
 
 namespace ProjectCoffee.Services
 {
     /// <summary>
     /// Base service for managing machine state and logic
     /// </summary>
-    public abstract class MachineService
+    public abstract class MachineService : IMachineService
     {
         // Events for UI to subscribe to
         public event Action<MachineState> OnStateChanged;
@@ -64,8 +67,30 @@ namespace ProjectCoffee.Services
         /// </summary>
         protected void NotifyUser(string message)
         {
-            OnNotificationRequested?.Invoke(message);
+        // First, try to use the event for direct subscribers
+        OnNotificationRequested?.Invoke(message);
+        
+        // Try to get notification service from ServiceManager first
+        INotificationService notificationService = null;
+        if (ServiceManager.Instance != null)
+            {
+            notificationService = ServiceManager.Instance.GetService<INotificationService>();
         }
+        // Fallback to ServiceLocator if ServiceManager is unavailable
+        else
+        {
+            notificationService = ServiceLocator.Instance.GetService<INotificationService>();
+        }
+        
+        // Show notification if service is available
+        notificationService?.ShowNotification(message);
+        
+        // If no service is available, fallback to direct UIManager call
+        if (notificationService == null && UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowNotification(message);
+        }
+    }
         
         /// <summary>
         /// Update process progress

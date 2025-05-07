@@ -1,12 +1,14 @@
 using System;
 using UnityEngine;
+using ProjectCoffee.Services.Interfaces;
+using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Services
 {
     /// <summary>
     /// Service for managing coffee gramming machine state and logic
     /// </summary>
-    public class CoffeeGrammingService : MachineService
+    public class CoffeeGrammingService : MachineService, IGrammingService
     {
         // Events specific to gramming machine
         public event Action<float> OnCoffeeAmountChanged;

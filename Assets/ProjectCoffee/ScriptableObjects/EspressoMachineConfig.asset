@@ -17,11 +17,17 @@ MonoBehaviour:
   maxUpgradeLevel: 2
   baseProcessTime: 3
   upgradeLevels:
-  - upgradeName: 
-    description: 
+  - upgradeName: Semi-Automatic Espresso Machine
+    description: Press button to grind beans
     upgradeCost: 0
     processTimeMultiplier: 0
     interactionType: 1
+    upgradeIcon: {fileID: 0}
+  - upgradeName: Semi-Automatic Espresso Machine
+    description: Press button to grind beans
+    upgradeCost: 0
+    processTimeMultiplier: 0
+    interactionType: 4
     upgradeIcon: {fileID: 0}
   brewingTime: 5
   initialSlotCount: 1

@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Services;
+using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Core.Services;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -128,10 +130,13 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
     {
         CheckSlotsPresence();
         
+        // Get service from ServiceLocator for more robust access
+        var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
+        
         // Let the service update brewing progress
-        if (service != null)
+        if (espressoService != null)
         {
-            service.UpdateBrewing(Time.deltaTime);
+            espressoService.UpdateBrewing(Time.deltaTime);
         }
     }
     
@@ -184,7 +189,10 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
     private void OnBrewButtonClicked()
     {
         Debug.Log("Brew button clicked!");
-        service?.BrewAllReadySlots();
+        
+        // Use service locator for more robust access
+        var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
+        espressoService?.BrewAllReadySlots();
     }
     
     // This method is used for backward compatibility with old BrewButton
@@ -198,7 +206,8 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
         if (slotIndex < 0 || slotIndex >= brewingSlotUIs.Count) return;
         
         BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
-        EspressoMachineService.BrewingSlot slot = service.GetSlot(slotIndex);
+        var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
+        var slot = espressoService?.GetSlot(slotIndex);
         
         if (slot == null) return;
         
@@ -242,11 +251,14 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
         if (slotIndex < 0 || slotIndex >= brewingSlotUIs.Count) return;
         
         BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
-        EspressoMachineService.BrewingSlot slot = service.GetSlot(slotIndex);
+        
+        // Get service from ServiceLocator
+        var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
+        var slot = espressoService?.GetSlot(slotIndex);
         
         if (slotUI.currentCup != null && slotUI.currentPortafilter != null && slot != null)
         {
-            // Get the quality factor from the portafilter
+        // Get quality factor from the slot
             float qualityFactor = slot.coffeeQuality;
             
             // Get shot amount from config
@@ -289,8 +301,11 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
             processStartSound.Play();
         }
         
+        // Get service from ServiceLocator
+        var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
+        
         // Continue while the slot is active
-        while (service.GetSlot(slotIndex)?.isActive ?? false)
+        while (espressoService?.GetSlot(slotIndex)?.isActive ?? false)
         {
             yield return null;
         }

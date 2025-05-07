@@ -2,7 +2,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Services;
+using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Core.Services;
 using DG.Tweening;
 
 /// <summary>
@@ -120,10 +122,12 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
     {
         CheckPortafilterPresence();
         
+        // Use service locator to get service when needed
+        var grammingService = ServiceLocator.Instance.GetService<IGrammingService>();
         // Check for automatic operation at upgrade level 2
-        if (service.UpgradeLevel >= 2)
+        if (grammingService?.UpgradeLevel >= 2)
         {
-            service.CheckAutoOperation();
+            grammingService.CheckAutoOperation();
         }
     }
     
