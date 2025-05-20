@@ -1,13 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Services;
-using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Machines;
-using ProjectCoffee.Core.Services;
 using System.Collections;
 using DG.Tweening;
 using TMPro;
-using UnityEngine.Events;
+
 
 /// <summary>
 /// Refactored coffee grinder that uses service pattern for logic
@@ -462,7 +460,8 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
         }
     }
     
-    private void Update()
+    
+    private void LateUpdate()
     {
         // Only process for level 2 (automatic grinder)
         if (service == null || service.UpgradeLevel != 2)

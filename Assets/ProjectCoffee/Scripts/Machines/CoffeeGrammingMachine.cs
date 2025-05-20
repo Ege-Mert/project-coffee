@@ -16,12 +16,17 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
     [SerializeField] private DropZone portafilterZone;
     [SerializeField] private DropZone groundCoffeeZone;
     [SerializeField] private Holdable grammingButton;
+    [SerializeField] private Button autoDoseButton; // New button for Level 1
     [SerializeField] private TMP_Text portafilterGramText;
     [SerializeField] private TMP_Text storageGramText;
     [SerializeField] private Image qualityIndicator;
     [SerializeField] private Gradient qualityGradient;
+    [SerializeField] private GameObject autoDosingIndicator; // Visual indicator for Level 2
     
     private Portafilter currentPortafilter;
+    
+    // Add this field near your other private fields
+    private float autoOperationCheckTimer = 0f;
     
     protected override void InitializeService()
     {
@@ -35,6 +40,7 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         // Setup UI elements
         ConfigureDropZones();
         ConfigureGrammingButton();
+        ConfigureAutoDoseButton();
         
         // Subscribe to gramming-specific events
         if (service != null)
@@ -42,8 +48,12 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             service.OnCoffeeAmountChanged += UpdateStorageDisplay;
             service.OnPortafilterFillChanged += UpdatePortafilterDisplay;
             service.OnQualityEvaluated += UpdateQualityIndicator;
+            service.OnAutoDoseCompleted += OnAutoDoseCompleted;
+            service.OnAutoDoseStarted += OnAutoDoseStarted;
         }
         
+        // Configure UI based on initial upgrade level
+        UpdateUIForUpgradeLevel(service?.UpgradeLevel ?? 0);
         UpdateUI();
     }
     
@@ -88,8 +98,9 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
                 if (service == null) return false;
                 bool hasPortafilter = service.HasPortafilter;
                 bool hasCoffee = service.StoredCoffeeAmount > 0;
-                bool result = hasPortafilter && hasCoffee;
-                Debug.Log($"GrammingButton CanInteract check: HasPortafilter={hasPortafilter}, HasCoffee={hasCoffee}, Storage={service.StoredCoffeeAmount}g, Result={result}");
+                bool correctLevel = service.UpgradeLevel == 0; // Only active at level 0
+                bool result = hasPortafilter && hasCoffee && correctLevel;
+                Debug.Log($"GrammingButton CanInteract check: HasPortafilter={hasPortafilter}, HasCoffee={hasCoffee}, Storage={service.StoredCoffeeAmount}g, Level={service.UpgradeLevel}, Result={result}");
                 return result;
             };
             
@@ -105,6 +116,22 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         }
     }
     
+    private void ConfigureAutoDoseButton()
+    {
+        if (autoDoseButton != null)
+        {
+            // Remove any existing listeners
+            autoDoseButton.onClick.RemoveAllListeners();
+            
+            // Add click listener for the auto dose button
+            autoDoseButton.onClick.AddListener(OnAutoDoseButtonClicked);
+            
+            // Initially disabled if not at level 1
+            autoDoseButton.gameObject.SetActive(service?.UpgradeLevel == 1);
+            autoDoseButton.interactable = false; // Will be updated in Update
+        }
+    }
+    
     protected override void OnDestroy()
     {
         base.OnDestroy();
@@ -115,6 +142,14 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             service.OnCoffeeAmountChanged -= UpdateStorageDisplay;
             service.OnPortafilterFillChanged -= UpdatePortafilterDisplay;
             service.OnQualityEvaluated -= UpdateQualityIndicator;
+            service.OnAutoDoseCompleted -= OnAutoDoseCompleted;
+            service.OnAutoDoseStarted -= OnAutoDoseStarted;
+        }
+        
+        // Clean up auto dose button listener
+        if (autoDoseButton != null)
+        {
+            autoDoseButton.onClick.RemoveListener(OnAutoDoseButtonClicked);
         }
     }
     
@@ -122,12 +157,66 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
     {
         CheckPortafilterPresence();
         
+        // Update the auto dose button interactability
+        UpdateAutoDoseButtonState();
+        
         // Use service locator to get service when needed
         var grammingService = ServiceLocator.Instance.GetService<IGrammingService>();
-        // Check for automatic operation at upgrade level 2
-        if (grammingService?.UpgradeLevel >= 2)
+        
+        // For Level 2: If portafilter amount changes, update the visual portafilter
+        if (grammingService?.UpgradeLevel == 2 && currentPortafilter != null)
         {
-            grammingService.CheckAutoOperation();
+            float serviceAmount = grammingService.PortafilterCoffeeAmount;
+            float currentAmount = currentPortafilter.GetItemAmount("ground_coffee");
+            
+            // If there's a mismatch between service and visual state, update the visual
+            if (serviceAmount > 0 && Mathf.Abs(serviceAmount - currentAmount) > 0.01f)
+            {
+                Debug.Log($"Syncing portafilter visual: Service amount={serviceAmount}g, Visual amount={currentAmount}g");
+                currentPortafilter.Clear();
+                currentPortafilter.TryAddItem("ground_coffee", serviceAmount);
+            }
+        }
+        
+        // Update visual feedback for processing state
+        if (service != null && service.CurrentState == MachineState.Processing)
+        {
+            // Show processing particles when in processing state
+            if (processingParticles != null && !processingParticles.isPlaying)
+            {
+                Debug.Log("Starting processing particles");
+                processingParticles.Play();
+            }
+        }
+        else
+        {
+            // Stop particles when not processing
+            if (processingParticles != null && processingParticles.isPlaying)
+            {
+                Debug.Log("Stopping processing particles");
+                processingParticles.Stop();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// LateUpdate runs after all Updates 
+    /// </summary>
+    private void LateUpdate()
+    {
+        // Use this for any additional checks that should happen after regular updates
+    }
+    
+    private void UpdateAutoDoseButtonState()
+    {
+        if (autoDoseButton != null && service?.UpgradeLevel == 1)
+        {
+            bool hasPortafilter = service.HasPortafilter;
+            bool hasCoffee = service.StoredCoffeeAmount > 0;
+            bool emptyPortafilter = service.PortafilterCoffeeAmount <= 0;
+            
+            // Only interactable if there's a portafilter, it's empty, and there's coffee in storage
+            autoDoseButton.interactable = hasPortafilter && hasCoffee && emptyPortafilter;
         }
     }
     
@@ -196,6 +285,148 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         }
     }
     
+    /// <summary>
+    /// Handle auto-dose button click for level 1
+    /// </summary>
+    private void OnAutoDoseButtonClicked()
+    {
+        Debug.Log("Auto-dose button clicked");
+        
+        if (service == null || !service.HasPortafilter || service.StoredCoffeeAmount <= 0)
+        {
+            Debug.LogWarning("Cannot auto-dose: Invalid conditions");
+            return;
+        }
+        
+        // Disable button immediately to prevent multiple clicks
+        if (autoDoseButton != null)
+        {
+            autoDoseButton.interactable = false;
+        }
+        
+        // Visual feedback
+        if (processingParticles != null)
+        {
+            processingParticles.Play();
+        }
+        
+        if (processStartSound != null)
+        {
+            processStartSound.Play();
+        }
+        
+        // Start the auto-dosing process
+        StartCoroutine(AutoDoseProcess());
+    }
+    
+    /// <summary>
+    /// Process for auto-dosing at level 1
+    /// </summary>
+    private System.Collections.IEnumerator AutoDoseProcess()
+    {
+        // Start processing
+        service.StartProcessing();
+        
+        // Wait for the auto-dosing time from config
+        float processingTime = 2f; // Default fallback
+        
+        // Get the proper processing time from config
+        if (config is GrammingMachineConfig grammingConfig)
+        {
+            processingTime = grammingConfig.level1AutoDoseTime;
+            Debug.Log($"Using configured auto-dose time: {processingTime}s");
+        }
+        else
+        {
+            Debug.LogWarning("AutoDoseProcess: Could not access GrammingMachineConfig, using default time");
+        }
+        
+        float startTime = Time.time;
+        
+        while (Time.time < startTime + processingTime)
+        {
+            // Update progress
+            float progress = (Time.time - startTime) / processingTime;
+            service.UpdateProgress(progress);
+            yield return null;
+        }
+        
+        // Complete the auto-dosing
+        service.PerformAutoDose();
+        
+        // Update the visual portafilter
+        if (currentPortafilter != null)
+        {
+            float newAmount = service.PortafilterCoffeeAmount;
+            currentPortafilter.Clear();
+            currentPortafilter.TryAddItem("ground_coffee", newAmount);
+        }
+        
+        // Stop visual feedback
+        if (processingParticles != null)
+        {
+            processingParticles.Stop();
+        }
+        
+        if (processCompleteSound != null)
+        {
+            processCompleteSound.Play();
+        }
+        
+        // Re-enable button after a configurable delay
+        float cooldownDelay = 0.5f; // Default value
+        yield return new WaitForSeconds(cooldownDelay);
+        UpdateAutoDoseButtonState();
+    }
+    
+    /// <summary>
+    /// Handler for auto-dose completion event
+    /// </summary>
+    private void OnAutoDoseCompleted()
+    {
+        Debug.Log("Auto-dose completed, updating portafilter visual");
+        
+        if (currentPortafilter != null && service != null)
+        {
+            float newAmount = service.PortafilterCoffeeAmount;
+            Debug.Log($"Updating portafilter with {newAmount}g of coffee");
+            
+            // Clear and add the correct amount to the portafilter
+            currentPortafilter.Clear();
+            currentPortafilter.TryAddItem("ground_coffee", newAmount);
+            
+            // Provide visual feedback
+            if (processingParticles != null)
+            {
+                processingParticles.Stop();
+            }
+            
+            if (processCompleteSound != null)
+            {
+                processCompleteSound.Play();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Handler for auto-dose started event
+    /// </summary>
+    private void OnAutoDoseStarted()
+    {
+        Debug.Log("Auto-dose started, showing processing effects");
+        
+        // Start visual feedback
+        if (processingParticles != null && !processingParticles.isPlaying)
+        {
+            processingParticles.Play();
+        }
+        
+        if (processStartSound != null)
+        {
+            processStartSound.Play();
+        }
+    }
+    
     private void OnGrammingButtonRelease(float heldDuration)
     {
         service?.OnDispensingRelease();
@@ -235,6 +466,119 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             // Consume the ground coffee
             DOTween.Kill(groundCoffee.transform);
             Destroy(groundCoffee.gameObject, 0.5f);
+            
+            // DIRECT AUTO-DOSING CHECK FOR LEVEL 2
+            // If we're at level 2 and have a portafilter, directly trigger auto-dosing
+            if (service.UpgradeLevel == 2 && currentPortafilter != null)
+            {
+                Debug.Log("OnGroundCoffeeDropped: Level 2 with portafilter - DIRECTLY triggering auto-dosing");
+                
+                // Use a small delay to allow UI to update
+                Invoke("DirectAutoDosingCheck", 0.5f);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Directly checks and triggers auto-dosing, bypassing the request system
+    /// </summary>
+    private void DirectAutoDosingCheck()
+    {
+        Debug.Log("DirectAutoDosingCheck: Forcing auto-dosing check");
+        
+        // Ensure the machine is in the right state
+        if (service.CurrentState != MachineState.Ready)
+        {
+            Debug.Log($"DirectAutoDosingCheck: Forcing state from {service.CurrentState} to Ready");
+            // Force the machine to be in a ready state
+            if (service.CurrentState == MachineState.Idle)
+            {
+                service.TransitionToState(MachineState.Ready);
+            }
+        }
+        
+        // Check for auto-dosing directly - this should bypass any state checks
+        StartCoroutine(ForceAutoDosing());
+    }
+    
+    /// <summary>
+    /// Force auto-dosing with a small delay
+    /// </summary>
+    private System.Collections.IEnumerator ForceAutoDosing()
+    {
+        // Small delay to ensure all state transitions are complete
+        yield return new WaitForSeconds(0.2f);
+        
+        if (service != null && service.UpgradeLevel == 2 && 
+            currentPortafilter != null && service.HasPortafilter && 
+            service.StoredCoffeeAmount > 0)
+        {
+            Debug.Log("ForceAutoDosing: Starting auto-dosing process directly");
+            
+            // Get the ideal amount and how much we need to add
+            float idealAmount = (config as GrammingMachineConfig)?.idealGramAmount ?? 18f;
+            float currentAmount = service.PortafilterCoffeeAmount;
+            float amountNeeded = idealAmount - currentAmount;
+            
+            if (amountNeeded > 0)
+            {
+                Debug.Log($"ForceAutoDosing: Portafilter needs {amountNeeded}g more coffee. Starting processing.");
+                
+                // Start processing
+                service.StartProcessing();
+                
+                // Trigger the auto-dosing effect
+                if (processingParticles != null && !processingParticles.isPlaying)
+                {
+                    processingParticles.Play();
+                }
+                
+                if (processStartSound != null)
+                {
+                    processStartSound.Play();
+                }
+                
+                // Use the proper timing from config
+                float processingTime = (config as GrammingMachineConfig)?.level1AutoDoseTime ?? 2.0f;
+                
+                // Update progress during the animation
+                float startTime = Time.time;
+                while (Time.time < startTime + processingTime)
+                {
+                    float progress = (Time.time - startTime) / processingTime;
+                    service.UpdateProgress(progress);
+                    yield return null;
+                }
+                
+                // Perform the auto dose
+                service.PerformAutoDose();
+                
+                // Complete processing
+                if (processingParticles != null)
+                {
+                    processingParticles.Stop();
+                }
+                
+                if (processCompleteSound != null)
+                {
+                    processCompleteSound.Play();
+                }
+                
+                // Update visual
+                if (currentPortafilter != null)
+                {
+                    currentPortafilter.Clear();
+                    currentPortafilter.TryAddItem("ground_coffee", service.PortafilterCoffeeAmount);
+                }
+            }
+            else
+            {
+                Debug.Log("ForceAutoDosing: Portafilter already has enough coffee");
+            }
+        }
+        else
+        {
+            Debug.Log("ForceAutoDosing: Conditions not met for auto-dosing");
         }
     }
     
@@ -256,6 +600,8 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         {
             Debug.Log("Item is a valid portafilter, setting in service");
             currentPortafilter = portafilter;
+            
+            // Tell the service a portafilter is now present
             service.SetPortafilterPresent(true);
             Debug.Log($"Service now has portafilter: {service.HasPortafilter}");
             
@@ -264,6 +610,15 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             
             // Update the UI to reflect portafilter presence
             UpdatePortafilterDisplay(service.PortafilterCoffeeAmount);
+            
+            // If at level 2 and there's ground coffee, this should trigger auto-operation
+            if (service.UpgradeLevel == 2 && service.StoredCoffeeAmount > 0)
+            {
+                Debug.Log("OnPortafilterDropped: Level 2 with coffee in storage - DIRECTLY triggering auto-dosing");
+                
+                // Use a small delay to allow UI to update
+                Invoke("DirectAutoDosingCheck", 0.5f);
+            }
         }
     }
     
@@ -335,23 +690,58 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         base.HandleUpgradeApplied(level);
         
         // Update UI based on upgrade level
-        if (grammingButton != null)
+        UpdateUIForUpgradeLevel(level);
+    }
+    
+    /// <summary>
+    /// Updates the UI elements based on the current upgrade level
+    /// </summary>
+    private void UpdateUIForUpgradeLevel(int level)
+    {
+        Debug.Log($"CoffeeGrammingMachine: Updating UI for upgrade level {level}");
+        
+        // Update UI based on upgrade level
+        switch (level)
         {
-            // You might want to change button behavior based on level
-            switch (level)
-            {
-                case 0:
-                    // Manual hold operation
-                    break;
-                case 1:
-                    // Single button press for perfect dose
-                    // TODO: Implement single-press behavior
-                    break;
-                case 2:
-                    // Automatic operation
+            case 0: // Manual - Hold button
+                if (grammingButton != null)
+                    grammingButton.gameObject.SetActive(true);
+                    
+                if (autoDoseButton != null)
+                    autoDoseButton.gameObject.SetActive(false);
+                    
+                if (autoDosingIndicator != null)
+                    autoDosingIndicator.gameObject.SetActive(false);
+                break;
+                
+            case 1: // Semi-Auto - Single button press
+                if (grammingButton != null)
                     grammingButton.gameObject.SetActive(false);
-                    break;
-            }
+                    
+                if (autoDoseButton != null)
+                {
+                    autoDoseButton.gameObject.SetActive(true);
+                    UpdateAutoDoseButtonState(); // Update interactability
+                }
+                
+                if (autoDosingIndicator != null)
+                    autoDosingIndicator.gameObject.SetActive(false);
+                break;
+                
+            case 2: // Fully Automatic
+                if (grammingButton != null)
+                    grammingButton.gameObject.SetActive(false);
+                    
+                if (autoDoseButton != null)
+                    autoDoseButton.gameObject.SetActive(false);
+                    
+                if (autoDosingIndicator != null)
+                    autoDosingIndicator.gameObject.SetActive(true);
+                break;
+                
+            default:
+                Debug.LogWarning($"Unexpected upgrade level: {level}");
+                break;
         }
     }
 }

@@ -17,6 +17,8 @@ namespace ProjectCoffee.Services.Interfaces
         event Action<float> OnCoffeeAmountChanged;
         event Action<float> OnPortafilterFillChanged;
         event Action<CoffeeQualityEvaluator.QualityLevel> OnQualityEvaluated;
+        event Action OnAutoDoseStarted;
+        event Action OnAutoDoseCompleted;
         
         // Methods
         bool AddCoffee(float amount);
@@ -25,5 +27,7 @@ namespace ProjectCoffee.Services.Interfaces
         void OnDispensingRelease();
         void ClearPortafilter();
         void CheckAutoOperation();
+        void PerformAutoDose();
+        void UpdateProgress(float progress);
     }
 }
