@@ -248,17 +248,7 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
                     grinderConfig.level1GrindTime;
             }
             
-            // Start visual effects
-            if (processingParticles != null)
-            {
-                processingParticles.Play();
-            }
-            
-            if (processStartSound != null)
-            {
-                processStartSound.Play();
-            }
-            
+
             Debug.Log($"CoffeeGrinder: Grinding bean, remaining beans: {service.CurrentBeanFills}");
             
             // Wait for the grinding process
@@ -269,12 +259,6 @@ public class CoffeeGrinder : Machine<CoffeeGrinderService, GrinderConfig>
             {
                 service.ProcessUpdate(Time.deltaTime);
                 yield return null;
-            }
-            
-            // Stop visual effects
-            if (processingParticles != null)
-            {
-                processingParticles.Stop();
             }
             
             // If we still have beans, force state to Ready for next bean

@@ -211,7 +211,7 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
             
             BrewingSlotUI slotUI = brewingSlotUIs[i];
             bool portafilterChanged = false;
-            bool cupChanged = false;
+            bool cupChanged = false;    
             
             // Check if enough time has passed since last update for this slot
             bool canUpdate = !lastStateUpdateTime.ContainsKey(i) || 
@@ -425,12 +425,6 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
         // ADDITIONAL FIX: Add a delayed restoration to ensure everything is properly restored
         StartCoroutine(DelayedRestoreSlotItems(slotIndex));
         
-        // Play completion sound
-        if (processCompleteSound != null)
-        {
-            processCompleteSound.Play();
-        }
-        
         // Add a delay before allowing state updates again
         StartCoroutine(ResetStateUpdateCooldown(slotIndex));
     }
@@ -596,31 +590,11 @@ public class EspressoMachine : Machine<EspressoMachineService, EspressoMachineCo
     {
         BrewingSlotUI slotUI = brewingSlotUIs[slotIndex];
         
-        // Start effects
-        if (processingParticles != null)
-        {
-            processingParticles.transform.position = slotUI.cupZone.transform.position;
-            processingParticles.Play();
-        }
-        
-        if (processStartSound != null)
-        {
-            processStartSound.Play();
-        }
-        
-        // Get service from ServiceLocator
         var espressoService = ServiceLocator.Instance.GetService<IEspressoMachineService>();
         
-        // Continue while the slot is active
         while (espressoService?.GetSlot(slotIndex)?.isActive ?? false)
         {
             yield return null;
-        }
-        
-        // Stop effects
-        if (processingParticles != null)
-        {
-            processingParticles.Stop();
         }
     }
     

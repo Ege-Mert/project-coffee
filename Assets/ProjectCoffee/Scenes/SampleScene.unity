@@ -966,7 +966,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &282882655
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1379,14 +1379,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
-  idleIndicator: {fileID: 0}
-  readyIndicator: {fileID: 0}
-  processingIndicator: {fileID: 0}
-  completeIndicator: {fileID: 0}
-  processStartSound: {fileID: 0}
-  processCompleteSound: {fileID: 0}
-  processingParticles: {fileID: 0}
-  machineAnimator: {fileID: 0}
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -2249,7 +2241,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 98718511}
-  - {fileID: 1723157930}
   - {fileID: 1865886379}
   - {fileID: 202207924}
   - {fileID: 411061438}
@@ -4774,57 +4765,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6296893565957166768, guid: 964123d07e1168341934b16441a79519, type: 3}
   m_PrefabInstance: {fileID: 139514998}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1723157929
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1723157930}
-  - component: {fileID: 1723157931}
-  m_Layer: 0
-  m_Name: UpgradeManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1723157930
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1723157929}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -457.24362, y: -319.03473, z: 4.8080955}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 678733603}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1723157931
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1723157929}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  machines: []
-  OnMachineUpgraded:
-    m_PersistentCalls:
-      m_Calls: []
-  OnUpgradesChanged:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1 &1724035248
 GameObject:
   m_ObjectHideFlags: 0
@@ -4842,7 +4782,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1724035249
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6258,14 +6198,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
-  idleIndicator: {fileID: 0}
-  readyIndicator: {fileID: 0}
-  processingIndicator: {fileID: 0}
-  completeIndicator: {fileID: 0}
-  processStartSound: {fileID: 0}
-  processCompleteSound: {fileID: 0}
-  processingParticles: {fileID: 0}
-  machineAnimator: {fileID: 0}
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -6596,14 +6528,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 18e4f2e467a10f340aa0cf800772580a, type: 2}
-  idleIndicator: {fileID: 0}
-  readyIndicator: {fileID: 0}
-  processingIndicator: {fileID: 0}
-  completeIndicator: {fileID: 0}
-  processStartSound: {fileID: 0}
-  processCompleteSound: {fileID: 0}
-  processingParticles: {fileID: 0}
-  machineAnimator: {fileID: 0}
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []

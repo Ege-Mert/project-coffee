@@ -8,15 +8,12 @@ using ProjectCoffee.Core;
 using ProjectCoffee.Core.Services;
 using ProjectCoffee.Services.Interfaces;
 
-/// <summary>
-/// Main game manager
-/// </summary>
 public class GameManager : MonoBehaviour, IGameService
 {
     private static GameManager _instance;
     public static GameManager Instance => _instance;
     
-    [SerializeField] private float dayLengthInSeconds = 300f; // 5 minutes per day
+    [SerializeField] private float dayLengthInSeconds = 300f;
     [SerializeField] private int startingMoney = 100;
     
     private int money;
@@ -28,8 +25,6 @@ public class GameManager : MonoBehaviour, IGameService
     public float DayTimeRemaining => dayLengthInSeconds - dayTimer;
     public int CurrentDay => currentDay;
     public bool IsDayActive => isDayActive;
-    
-    // Events are now handled through EventBus
     
     private void Awake()
     {
@@ -50,9 +45,7 @@ public class GameManager : MonoBehaviour, IGameService
             dayTimer += Time.deltaTime;
             
             if (dayTimer >= dayLengthInSeconds)
-            {
                 EndDay();
-            }
         }
     }
     
@@ -69,24 +62,16 @@ public class GameManager : MonoBehaviour, IGameService
         currentDay++;
         EventBus.NotifyDayEnded(currentDay - 1);
         
-        // Show end of day screen and upgrade screen
-        // Try to use UI service if available
         var uiService = ServiceLocator.Instance.GetService<IUIService>();
         if (uiService != null)
         {
             uiService.ShowEndOfDayScreen();
             uiService.ShowUpgradeScreen();
         }
-        // Fall back to UIManager singleton if necessary
         else if (UIManager.Instance != null) 
         {
             UIManager.Instance.ShowEndOfDayScreen();
             UIManager.Instance.ShowUpgradeScreen();
-        }
-        // If neither is available, log an error
-        else
-        {
-            Debug.LogError("Cannot show end of day screens: No UI service available");
         }
     }
     

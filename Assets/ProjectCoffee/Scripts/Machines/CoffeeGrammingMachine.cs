@@ -178,25 +178,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             }
         }
         
-        // Update visual feedback for processing state
-        if (service != null && service.CurrentState == MachineState.Processing)
-        {
-            // Show processing particles when in processing state
-            if (processingParticles != null && !processingParticles.isPlaying)
-            {
-                Debug.Log("Starting processing particles");
-                processingParticles.Play();
-            }
-        }
-        else
-        {
-            // Stop particles when not processing
-            if (processingParticles != null && processingParticles.isPlaying)
-            {
-                Debug.Log("Stopping processing particles");
-                processingParticles.Stop();
-            }
-        }
     }
     
     /// <summary>
@@ -278,11 +259,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             }
         }
         
-        // Visual feedback
-        if (processingParticles != null && !processingParticles.isPlaying && service.CurrentState == MachineState.Processing)
-        {
-            processingParticles.Play();
-        }
     }
     
     /// <summary>
@@ -304,16 +280,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             autoDoseButton.interactable = false;
         }
         
-        // Visual feedback
-        if (processingParticles != null)
-        {
-            processingParticles.Play();
-        }
-        
-        if (processStartSound != null)
-        {
-            processStartSound.Play();
-        }
         
         // Start the auto-dosing process
         StartCoroutine(AutoDoseProcess());
@@ -361,18 +327,7 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             currentPortafilter.Clear();
             currentPortafilter.TryAddItem("ground_coffee", newAmount);
         }
-        
-        // Stop visual feedback
-        if (processingParticles != null)
-        {
-            processingParticles.Stop();
-        }
-        
-        if (processCompleteSound != null)
-        {
-            processCompleteSound.Play();
-        }
-        
+
         // Re-enable button after a configurable delay
         float cooldownDelay = 0.5f; // Default value
         yield return new WaitForSeconds(cooldownDelay);
@@ -385,26 +340,16 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
     private void OnAutoDoseCompleted()
     {
         Debug.Log("Auto-dose completed, updating portafilter visual");
-        
+
         if (currentPortafilter != null && service != null)
         {
             float newAmount = service.PortafilterCoffeeAmount;
             Debug.Log($"Updating portafilter with {newAmount}g of coffee");
-            
+
             // Clear and add the correct amount to the portafilter
             currentPortafilter.Clear();
             currentPortafilter.TryAddItem("ground_coffee", newAmount);
             
-            // Provide visual feedback
-            if (processingParticles != null)
-            {
-                processingParticles.Stop();
-            }
-            
-            if (processCompleteSound != null)
-            {
-                processCompleteSound.Play();
-            }
         }
     }
     
@@ -415,27 +360,12 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
     {
         Debug.Log("Auto-dose started, showing processing effects");
         
-        // Start visual feedback
-        if (processingParticles != null && !processingParticles.isPlaying)
-        {
-            processingParticles.Play();
-        }
-        
-        if (processStartSound != null)
-        {
-            processStartSound.Play();
-        }
     }
     
     private void OnGrammingButtonRelease(float heldDuration)
     {
         service?.OnDispensingRelease();
-        
-        // Stop visual feedback
-        if (processingParticles != null)
-        {
-            processingParticles.Stop();
-        }
+
     }
     
     /// <summary>
@@ -449,19 +379,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
             Debug.Log($"OnGroundCoffeeDropped: Adding {coffeeAmount}g to storage");
             bool added = service.AddCoffee(coffeeAmount);
             Debug.Log($"Coffee added: {added}, New storage amount: {service.StoredCoffeeAmount}g");
-            
-            // Visual feedback
-            if (processingParticles != null)
-            {
-                processingParticles.Play();
-                Invoke("StopParticles", 1.0f);
-            }
-            
-            // Sound effect
-            if (processStartSound != null)
-            {
-                processStartSound.Play();
-            }
             
             // Consume the ground coffee
             DOTween.Kill(groundCoffee.transform);
@@ -527,17 +444,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
                 // Start processing
                 service.StartProcessing();
                 
-                // Trigger the auto-dosing effect
-                if (processingParticles != null && !processingParticles.isPlaying)
-                {
-                    processingParticles.Play();
-                }
-                
-                if (processStartSound != null)
-                {
-                    processStartSound.Play();
-                }
-                
                 // Use the proper timing from config
                 float processingTime = (config as GrammingMachineConfig)?.level1AutoDoseTime ?? 2.0f;
                 
@@ -550,21 +456,8 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
                     yield return null;
                 }
                 
-                // Perform the auto dose
                 service.PerformAutoDose();
                 
-                // Complete processing
-                if (processingParticles != null)
-                {
-                    processingParticles.Stop();
-                }
-                
-                if (processCompleteSound != null)
-                {
-                    processCompleteSound.Play();
-                }
-                
-                // Update visual
                 if (currentPortafilter != null)
                 {
                     currentPortafilter.Clear();
@@ -579,14 +472,6 @@ public class CoffeeGrammingMachine : Machine<CoffeeGrammingService, GrammingMach
         else
         {
             Debug.Log("ForceAutoDosing: Conditions not met for auto-dosing");
-        }
-    }
-    
-    private void StopParticles()
-    {
-        if (processingParticles != null)
-        {
-            processingParticles.Stop();
         }
     }
     
