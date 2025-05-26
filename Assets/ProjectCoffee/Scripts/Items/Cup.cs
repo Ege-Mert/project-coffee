@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectCoffee.Items;
 
 /// <summary>
 /// Cup for the final drink
@@ -20,6 +21,12 @@ public class Cup : Container
     {
         base.Awake();
         UpdateVisuals();
+        
+        // Ensure we have a DraggableItemInitializer component
+        if (GetComponent<DraggableItemInitializer>() == null)
+        {
+            gameObject.AddComponent<DraggableItemInitializer>();
+        }
         
         // Try to find the cup stack that created this cup
         sourceStack = FindObjectOfType<CupStack>();

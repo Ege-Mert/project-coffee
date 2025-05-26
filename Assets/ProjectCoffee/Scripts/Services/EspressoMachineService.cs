@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectCoffee.Services.Interfaces;
@@ -35,6 +36,7 @@ namespace ProjectCoffee.Services
         
         private readonly Dictionary<int, BrewingSlot> slots = new Dictionary<int, BrewingSlot>();
         private float currentBrewTime;
+    private float espressoQualityLevelBonus = 0f; // Quality bonus from machine upgrades
         
         public EspressoMachineService(EspressoMachineConfig config) : base(config)
         {
@@ -86,11 +88,21 @@ namespace ProjectCoffee.Services
         {
             if (slots.TryGetValue(slotIndex, out BrewingSlot slot))
             {
+                Debug.Log($"Setting portafilter in slot {slotIndex}: present={present}, hasGroundCoffee={hasGroundCoffee}, quality={quality}");
+                
                 slot.hasPortafilter = present;
                 slot.hasGroundCoffee = hasGroundCoffee;
                 slot.coffeeQuality = quality;
+                
                 OnSlotStateChanged?.Invoke(slotIndex);
                 UpdateMachineState();
+                
+                // AUTO-BREW TRIGGER: If level 2 and all conditions met, start brewing immediately
+                if (upgradeLevel == 2 && present && hasGroundCoffee && slot.hasCup && !slot.isActive)
+                {
+                    Debug.Log($"SetPortafilter: Auto-starting brew for slot {slotIndex} - all conditions met!");
+                    StartBrewingSlot(slotIndex);
+                }
             }
         }
         
@@ -101,9 +113,18 @@ namespace ProjectCoffee.Services
         {
             if (slots.TryGetValue(slotIndex, out BrewingSlot slot))
             {
+                Debug.Log($"Setting cup in slot {slotIndex}: present={present}");
+                
                 slot.hasCup = present;
                 OnSlotStateChanged?.Invoke(slotIndex);
                 UpdateMachineState();
+                
+                // AUTO-BREW TRIGGER: If level 2 and all conditions met, start brewing immediately
+                if (upgradeLevel == 2 && present && slot.hasPortafilter && slot.hasGroundCoffee && !slot.isActive)
+                {
+                    Debug.Log($"SetCup: Auto-starting brew for slot {slotIndex} - all conditions met!");
+                    StartBrewingSlot(slotIndex);
+                }
             }
         }
         
@@ -114,7 +135,9 @@ namespace ProjectCoffee.Services
         {
             if (slots.TryGetValue(slotIndex, out BrewingSlot slot))
             {
-                return !slot.isActive && slot.hasPortafilter && slot.hasGroundCoffee && slot.hasCup;
+                bool canBrew = !slot.isActive && slot.hasPortafilter && slot.hasGroundCoffee && slot.hasCup;
+                Debug.Log($"CanBrewSlot {slotIndex}: {canBrew} (hasPortafilter:{slot.hasPortafilter}, hasGroundCoffee:{slot.hasGroundCoffee}, hasCup:{slot.hasCup}, isActive:{slot.isActive})");
+                return canBrew;
             }
             return false;
         }
@@ -168,6 +191,23 @@ namespace ProjectCoffee.Services
         {
             if (slots.TryGetValue(slotIndex, out BrewingSlot slot))
             {
+                // Apply quality bonus from machine level
+                if (upgradeLevel > 0)
+                {
+                    // At higher upgrade levels, espresso quality is improved
+                    float baseQuality = slot.coffeeQuality;
+                    float improvedQuality = Mathf.Clamp01(baseQuality + espressoQualityLevelBonus);
+                    
+                    // At level 2, quality is always at least 0.7 (good) regardless of input
+                    if (upgradeLevel >= 2)
+                    {
+                        improvedQuality = Mathf.Max(improvedQuality, 0.7f);
+                    }
+                    
+                    slot.coffeeQuality = improvedQuality;
+                    Debug.Log($"Improving espresso quality from {baseQuality} to {improvedQuality} due to machine level {upgradeLevel}");
+                }
+                
                 slot.isActive = false;
                 slot.brewProgress = 0f;
                 OnBrewingCompleted?.Invoke(slotIndex);
@@ -191,17 +231,23 @@ namespace ProjectCoffee.Services
         {
             bool anyActive = false;
             bool anyReadyToBrew = false;
+            List<int> readySlots = new List<int>();
             
-            foreach (var slot in slots.Values)
+            foreach (var entry in slots)
             {
+                int slotIndex = entry.Key;
+                var slot = entry.Value;
+                
                 if (slot.isActive)
                 {
                     anyActive = true;
-                    break;
                 }
+                
+                // Track slots that are ready to brew
                 if (!slot.isActive && slot.hasPortafilter && slot.hasGroundCoffee && slot.hasCup)
                 {
                     anyReadyToBrew = true;
+                    readySlots.Add(slotIndex);
                 }
             }
             
@@ -251,6 +297,13 @@ namespace ProjectCoffee.Services
             UpdateSlotCount();
             UpdateBrewTimeFromConfig();
             
+            // Log the level change and the slots info for debugging
+            Debug.Log($"Espresso machine upgrade level changed to {level}. Available slots: {slots.Count}");
+            foreach (var entry in slots)
+            {
+                Debug.Log($"Slot {entry.Key}: hasPortafilter={entry.Value.hasPortafilter}, hasGroundCoffee={entry.Value.hasGroundCoffee}, hasCup={entry.Value.hasCup}");
+            }
+            
             switch (level)
             {
                 case 0:
@@ -260,9 +313,15 @@ namespace ProjectCoffee.Services
                     NotifyUser("Faster brewing time!");
                     break;
                 case 2:
-                    NotifyUser("Extra brewing slots added!");
+                    NotifyUser("Extra brewing slots and auto-brewing activated!");
                     break;
             }
+            
+            // Update quality factor based on upgrade level
+            espressoQualityLevelBonus = level * 0.1f; // Each level adds 10% quality bonus
+            
+            // Trigger state update to enable auto-brewing if needed
+            UpdateMachineState();
         }
     }
 }

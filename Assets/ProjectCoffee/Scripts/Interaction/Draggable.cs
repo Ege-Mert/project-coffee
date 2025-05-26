@@ -83,6 +83,15 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
     }
     
     /// <summary>
+    /// Manually refresh the parent canvas reference - useful after reparenting
+    /// </summary>
+    public void RefreshCanvasReference()
+    {
+        FindParentCanvas();
+        DebugLog($"Refreshed canvas reference for {gameObject.name}: {parentCanvas?.name ?? "null"}");
+    }
+    
+    /// <summary>
     /// Save the current state (position and parent) for returning later if needed
     /// </summary>
     public void SaveOriginalState()
@@ -104,6 +113,10 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
             eventData.pointerDrag = null;
             return;
         }
+        
+        // CRITICAL FIX: Always try to find the canvas when starting a drag
+        // This ensures we have the correct canvas reference even after reparenting
+        FindParentCanvas();
         
         // Check if we have a valid canvas
         if (parentCanvas == null)

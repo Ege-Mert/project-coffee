@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectCoffee.Items;
 
 /// <summary>
 /// Portafilter for holding ground coffee
@@ -12,6 +13,17 @@ public class Portafilter : Container
     [SerializeField] private Gradient coffeeColorGradient;
     
     public bool HasGroundCoffee => ContainsItem("ground_coffee", 0.1f);
+    
+    protected override void Awake()
+    {
+        base.Awake();
+        
+        // Ensure we have a DraggableItemInitializer component
+        if (GetComponent<DraggableItemInitializer>() == null)
+        {
+            gameObject.AddComponent<DraggableItemInitializer>();
+        }
+    }
     
     protected override void OnContentsChanged()
     {

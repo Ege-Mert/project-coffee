@@ -1,45 +1,64 @@
 using UnityEngine;
+using ProjectCoffee.Interaction.Helpers;
 
 /// <summary>
-/// Advanced drop zone specifically for portafilters
+/// Advanced drop zone specifically for portafilters (updated with item tracking)
 /// </summary>
 public class PortafilterDropZone : DropZone
 {
     [SerializeField] private CoffeeGrammingMachine parentMachine;
     
     private Portafilter currentPortafilter;
+    private DropZoneItemTracker itemTracker;
     
-    private void Awake()
+    protected virtual void Start()
     {
-        // CRITICAL: Set the accept predicate in Awake to override any settings from the inspector
+        // base.Awake();
+        
+        // Add item tracker if not present
+        itemTracker = GetComponent<DropZoneItemTracker>();
+        if (itemTracker == null)
+        {
+            itemTracker = gameObject.AddComponent<DropZoneItemTracker>();
+        }
+        
+        // Set the accept predicate
         AcceptPredicate = (item) => item is Portafilter;
-        base.LogDebug("PortafilterDropZone initialized: Accept predicate set");
-    }
-    
-    private void Start()
-    {
-        // Double check that our accept predicate is properly set
-        base.LogDebug($"PortafilterDropZone started. AcceptPredicate is set: {AcceptPredicate != null}");
+        LogDebug("PortafilterDropZone initialized with item tracker");
     }
     
     public override bool CanAccept(Draggable item)
     {
-        bool baseAccept = isActive; // Skip the base.CanAccept check which causes problems
+        // First check with tracker to prevent overlapping
+        if (!itemTracker.CanAcceptItem(item))
+        {
+            LogDebug($"Item tracker rejected {item.name} - zone already has an item");
+            return false;
+        }
+        
+        bool baseAccept = isActive;
         bool isPortafilter = item is Portafilter;
         
-        base.LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, isPortafilter={isPortafilter}");
+        LogDebug($"CanAccept check for {item?.name}: isActive={isActive}, isPortafilter={isPortafilter}");
         
         return isActive && isPortafilter;
     }
     
     public override void OnItemDropped(Draggable item)
     {
-        // Don't call base because it's causing issues with the hierarchy change
-        // Instead, implement custom placement logic
-        
         if (item == null) return;
         
-        base.LogDebug($"OnItemDropped: Handling {item.name}");
+        LogDebug($"OnItemDropped: Handling {item.name}");
+        
+        // Update tracker first
+        itemTracker.SetItem(item);
+        
+        // Ensure item has state manager for processing states
+        var stateManager = item.GetComponent<DraggableStateManager>();
+        if (stateManager == null)
+        {
+            stateManager = item.gameObject.AddComponent<DraggableStateManager>();
+        }
         
         RectTransform itemRect = item.GetComponent<RectTransform>();
         if (itemRect == null) return;
@@ -57,34 +76,38 @@ public class PortafilterDropZone : DropZone
         // Track the current portafilter
         currentPortafilter = item as Portafilter;
         
-        base.LogDebug($"Portafilter {item.name} successfully placed in drop zone");
+        LogDebug($"Portafilter {item.name} successfully placed in drop zone");
         
         // Notify the machine
         if (parentMachine != null)
         {
-            base.LogDebug($"Notifying machine that portafilter was placed");
+            LogDebug($"Notifying machine that portafilter was placed");
             parentMachine.OnPortafilterDropped(item);
         }
         else
         {
-            base.LogDebug("WARNING: parentMachine reference is null, cannot notify");
+            LogDebug("WARNING: parentMachine reference is null, cannot notify");
         }
     }
     
     // This is called when a child is removed manually (by drag)
     private void OnTransformChildrenChanged()
     {
-        if (transform.childCount == 0 && currentPortafilter != null && parentMachine != null)
+        if (transform.childCount == 0 && currentPortafilter != null)
         {
-            base.LogDebug($"Portafilter {currentPortafilter.name} was removed");
+            LogDebug($"Portafilter {currentPortafilter.name} was removed");
+            
+            // Clear tracker
+            itemTracker.ClearItem();
             
             // Notify the machine
-            parentMachine.OnPortafilterRemoved(currentPortafilter);
+            if (parentMachine != null)
+            {
+                parentMachine.OnPortafilterRemoved(currentPortafilter);
+            }
             
             // Clear our reference
             currentPortafilter = null;
         }
     }
-    
-    // Remove the custom LogDebugPortafilter method entirely since we use base.LogDebug
 }

@@ -23,18 +23,23 @@ MonoBehaviour:
     processTimeMultiplier: 0
     interactionType: 1
     upgradeIcon: {fileID: 0}
-  - upgradeName: Semi-Automatic Espresso Machine
+  - upgradeName: Automatic Espresso Machine
     description: Press button to grind beans
     upgradeCost: 0
     processTimeMultiplier: 0
     interactionType: 4
     upgradeIcon: {fileID: 0}
   brewingTime: 5
-  initialSlotCount: 1
+  initialSlotCount: 2
   maxSlotCount: 4
   coffeeQualityWeight: 0.7
   temperatureQualityWeight: 0.3
   level0BrewTime: 5
+  level0Description: Basic espresso machine with 2 brewing slots.
   level1BrewTime: 3
+  level1Description: Improved brewing time and better quality espresso.
   level2ExtraSlots: 2
   level2BrewTime: 2
+  level2Description: Automatic brewing, 4 total slots, faster brewing time, and consistent
+    quality.
+  level2EnableAutoBrewing: 1

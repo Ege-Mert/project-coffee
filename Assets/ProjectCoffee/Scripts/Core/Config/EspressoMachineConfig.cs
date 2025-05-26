@@ -19,11 +19,18 @@ public class EspressoMachineConfig : MachineConfig
     // Level-specific settings
     [Header("Level 0 Settings")]
     public float level0BrewTime = 5f;
+    [Tooltip("Description of Level 0 features")]
+    public string level0Description = "Basic espresso machine with 2 brewing slots.";
     
     [Header("Level 1 Settings")]
     public float level1BrewTime = 3f; // Faster brewing
+    [Tooltip("Description of Level 1 features")]
+    public string level1Description = "Improved brewing time and better quality espresso.";
     
     [Header("Level 2 Settings")]
     public int level2ExtraSlots = 2; // Additional brewing slots
     public float level2BrewTime = 2f; // Even faster brewing
+    [Tooltip("Description of Level 2 features")]
+    public string level2Description = "Automatic brewing, 4 total slots, faster brewing time, and consistent quality.";
+    public bool level2EnableAutoBrewing = true; // Enable automatic brewing
 }

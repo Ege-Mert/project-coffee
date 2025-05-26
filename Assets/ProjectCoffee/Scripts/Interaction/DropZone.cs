@@ -139,6 +139,9 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         RectTransform itemRect = item.GetComponent<RectTransform>();
         itemRect.SetParent(transform);
         
+        // CRITICAL FIX: Refresh the canvas reference after reparenting
+        item.RefreshCanvasReference();
+        
         // Center the item if specified
         if (centerItemInZone)
         {
