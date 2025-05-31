@@ -1331,6 +1331,7 @@ GameObject:
   - component: {fileID: 435748852}
   - component: {fileID: 435748851}
   - component: {fileID: 435748850}
+  - component: {fileID: 435748853}
   m_Layer: 5
   m_Name: CoffeeGrammingMachine - Image
   m_TagString: Untagged
@@ -1379,6 +1380,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
+  currentState: 0
+  upgradeLevel: 0
+  processProgress: 0
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -1393,42 +1397,6 @@ MonoBehaviour:
       m_Calls: []
   portafilterZone: {fileID: 1114903402}
   groundCoffeeZone: {fileID: 1873983885}
-  grammingButton: {fileID: 258512286}
-  autoDoseButton: {fileID: 973253661}
-  portafilterGramText: {fileID: 548899711}
-  storageGramText: {fileID: 1890042010}
-  qualityIndicator: {fileID: 1187869913}
-  qualityGradient:
-    serializedVersion: 2
-    key0: {r: 1, g: 0, b: 0, a: 1}
-    key1: {r: 0.9762844, g: 1, b: 0, a: 1}
-    key2: {r: 0.18509269, g: 1, b: 0, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 32768
-    ctime2: 65535
-    ctime3: 0
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: -1
-    m_NumColorKeys: 3
-    m_NumAlphaKeys: 2
-  autoDosingIndicator: {fileID: 0}
 --- !u!114 &435748851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1467,6 +1435,71 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 435748848}
   m_CullTransparentMesh: 1
+--- !u!114 &435748853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 435748848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7296b15f38252564eb620713e9a82ae9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleIndicator: {fileID: 1786343779}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 0}
+  completeIndicator: {fileID: 0}
+  progressBar: {fileID: 0}
+  statusText: {fileID: 0}
+  processingParticles: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  grammingButton: {fileID: 258512286}
+  autoDoseButton: {fileID: 973253661}
+  portafilterGramText: {fileID: 548899711}
+  storageGramText: {fileID: 1890042010}
+  qualityIndicator: {fileID: 1187869913}
+  qualityGradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  manualGrammingIndicator: {fileID: 0}
+  semiAutoIndicator: {fileID: 0}
+  autoGrammingIndicator: {fileID: 0}
+  grammingToolSpawnPoint: {fileID: 0}
+  grammingToolPrefab: {fileID: 0}
+  grammingParticles: {fileID: 0}
+  grammingSound: {fileID: 0}
+  autoDoseSound: {fileID: 0}
 --- !u!1 &510487377
 GameObject:
   m_ObjectHideFlags: 0
@@ -4064,7 +4097,7 @@ MonoBehaviour:
   spinProgressIndicator: {fileID: 192375236}
   spinProgressSound: {fileID: 0}
   spinCompletedSound: {fileID: 0}
-  resetOnRelease: 0
+  resetOnSpinComplete: 1
   allowBothDirections: 1
 --- !u!114 &1321812442
 MonoBehaviour:
@@ -6153,6 +6186,7 @@ GameObject:
   - component: {fileID: 2095772920}
   - component: {fileID: 2095772919}
   - component: {fileID: 2095772918}
+  - component: {fileID: 2095772921}
   m_Layer: 5
   m_Name: CoffeeGrinder - Image
   m_TagString: Untagged
@@ -6198,6 +6232,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
+  currentState: 0
+  upgradeLevel: 0
+  processProgress: 0
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -6210,12 +6247,8 @@ MonoBehaviour:
   OnStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  beansLevelImage: {fileID: 142200152}
-  grindHandle: {fileID: 1321812441}
-  grindButton: {fileID: 1527944285}
   groundCoffeeOutputZone: {fileID: 1136698213}
   groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
-  keepHandleAlwaysVisible: 1
 --- !u!114 &2095772919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6254,6 +6287,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2095772916}
   m_CullTransparentMesh: 1
+--- !u!114 &2095772921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095772916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6129d6751ad91f24da628fc162be8b5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleIndicator: {fileID: 0}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 0}
+  completeIndicator: {fileID: 0}
+  progressBar: {fileID: 0}
+  statusText: {fileID: 0}
+  processingParticles: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  beansLevelImage: {fileID: 142200152}
+  grindHandle: {fileID: 1321812441}
+  grindButton: {fileID: 1527944285}
+  groundCoffeeOutputVisual: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
+  keepHandleAlwaysVisible: 0
+  beansLevelAnimationDuration: 0.3
+  manualGrindIndicator: {fileID: 192375234}
+  buttonGrindIndicator: {fileID: 192375234}
+  autoGrindIndicator: {fileID: 192375234}
 --- !u!1 &2095999735
 GameObject:
   m_ObjectHideFlags: 0
@@ -6487,6 +6551,7 @@ GameObject:
   - component: {fileID: 2117398628}
   - component: {fileID: 2117398627}
   - component: {fileID: 2117398626}
+  - component: {fileID: 2117398629}
   m_Layer: 5
   m_Name: EspressoMachine - Image
   m_TagString: Untagged
@@ -6528,6 +6593,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 18e4f2e467a10f340aa0cf800772580a, type: 2}
+  currentState: 0
+  upgradeLevel: 0
+  processProgress: 0
   OnProcessingStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -6540,34 +6608,16 @@ MonoBehaviour:
   OnStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  brewingSlotUIs:
-  - portafilterZone: {fileID: 546816798}
-    cupZone: {fileID: 1318800932}
-    activeIndicator: {fileID: 1479152356}
-    progressFill: {fileID: 1818626161}
-    currentPortafilter: {fileID: 0}
-    currentCup: {fileID: 0}
-  - portafilterZone: {fileID: 1536601756}
-    cupZone: {fileID: 556199972}
-    activeIndicator: {fileID: 239556599}
-    progressFill: {fileID: 810611445}
-    currentPortafilter: {fileID: 0}
-    currentCup: {fileID: 0}
-  - portafilterZone: {fileID: 820558487}
-    cupZone: {fileID: 1138546028}
-    activeIndicator: {fileID: 1206379497}
-    progressFill: {fileID: 1146255300}
-    currentPortafilter: {fileID: 0}
-    currentCup: {fileID: 0}
-  - portafilterZone: {fileID: 714453894}
-    cupZone: {fileID: 245976962}
-    activeIndicator: {fileID: 12851738}
-    progressFill: {fileID: 1297442485}
-    currentPortafilter: {fileID: 0}
-    currentCup: {fileID: 0}
-  brewButton: {fileID: 755693586}
-  autoBrewIndicator: {fileID: 0}
-  manualBrewIndicator: {fileID: 0}
+  portafilterZones:
+  - {fileID: 546816798}
+  - {fileID: 1536601756}
+  - {fileID: 820558487}
+  - {fileID: 714453894}
+  cupZones:
+  - {fileID: 1318800932}
+  - {fileID: 556199972}
+  - {fileID: 1138546028}
+  - {fileID: 245976962}
 --- !u!114 &2117398627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6606,6 +6656,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2117398624}
   m_CullTransparentMesh: 1
+--- !u!114 &2117398629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2117398624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb9378fda1f77f34aa4b021c74a102bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleIndicator: {fileID: 0}
+  readyIndicator: {fileID: 0}
+  processingIndicator: {fileID: 810611443}
+  completeIndicator: {fileID: 0}
+  progressBar: {fileID: 1818626161}
+  statusText: {fileID: 0}
+  processingParticles: {fileID: 0}
+  processStartSound: {fileID: 0}
+  processCompleteSound: {fileID: 0}
+  machineAnimator: {fileID: 0}
+  brewingSlotUIs:
+  - portafilterZone: {fileID: 546816798}
+    cupZone: {fileID: 1318800932}
+    activeIndicator: {fileID: 1479152356}
+    readyIndicator: {fileID: 1818626160}
+    progressFill: {fileID: 1297442485}
+    brewingParticles: {fileID: 0}
+    slotContainer: {fileID: 0}
+  - portafilterZone: {fileID: 1536601756}
+    cupZone: {fileID: 556199972}
+    activeIndicator: {fileID: 239556599}
+    readyIndicator: {fileID: 810611443}
+    progressFill: {fileID: 1297442485}
+    brewingParticles: {fileID: 0}
+    slotContainer: {fileID: 0}
+  - portafilterZone: {fileID: 820558487}
+    cupZone: {fileID: 1138546028}
+    activeIndicator: {fileID: 1206379497}
+    readyIndicator: {fileID: 1146255299}
+    progressFill: {fileID: 1146255300}
+    brewingParticles: {fileID: 0}
+    slotContainer: {fileID: 0}
+  - portafilterZone: {fileID: 714453894}
+    cupZone: {fileID: 245976962}
+    activeIndicator: {fileID: 12851738}
+    readyIndicator: {fileID: 1297442484}
+    progressFill: {fileID: 1297442485}
+    brewingParticles: {fileID: 0}
+    slotContainer: {fileID: 0}
+  brewButton: {fileID: 755693586}
+  autoBrewIndicator: {fileID: 0}
+  manualBrewIndicator: {fileID: 0}
+  brewingSound: {fileID: 0}
+  brewCompleteSound: {fileID: 0}
+  brewingShakeIntensity: 0.01
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

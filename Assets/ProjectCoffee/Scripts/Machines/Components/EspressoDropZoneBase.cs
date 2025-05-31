@@ -1,7 +1,6 @@
 using UnityEngine;
 using ProjectCoffee.Interaction.Helpers;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Machines.Components
 {

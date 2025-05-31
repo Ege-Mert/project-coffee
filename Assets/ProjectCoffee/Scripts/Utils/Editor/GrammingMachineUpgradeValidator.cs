@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using ProjectCoffee.Machines;
 
 /// <summary>
 /// Editor script to validate that the Gramming Machine has all required components for upgrades

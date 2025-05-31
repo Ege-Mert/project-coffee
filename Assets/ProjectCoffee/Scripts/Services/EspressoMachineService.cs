@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Services
 {

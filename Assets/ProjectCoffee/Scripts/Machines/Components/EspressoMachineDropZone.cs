@@ -4,7 +4,6 @@ using UnityEngine.UI;
 using ProjectCoffee.Interaction.Helpers;
 using ProjectCoffee.Machines.Components;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 
 /// <summary>
 /// Helper class for espresso machine drop zones with proper item tracking
@@ -12,6 +11,13 @@ using ProjectCoffee.Core.Services;
 public class EspressoMachineDropZone : EspressoDropZoneBase
 {
     [SerializeField] private bool isPortafilterZone; // True for portafilter, false for cup
+    
+    // Add this property to expose the slotIndex field
+    public int SlotIndex 
+    { 
+        get => slotIndex; 
+        set => slotIndex = value; 
+    }
     
     protected override void SetupAcceptPredicate()
     {

@@ -1,25 +1,37 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ProjectCoffee.Services;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Core
 {
-    /// <summary>
-    /// Persistent manager for all game services that survives across scene loads
-    /// </summary>
     public class ServiceManager : MonoBehaviour
     {
+        private static ServiceManager _instance;
+        private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
+        
         [Header("References")]
         [SerializeField] private UIManager uiManager;
         [SerializeField] private AudioManager audioManager;
         
-        private static ServiceManager _instance;
-        private bool _servicesInitialized = false;
+        private static IGameService _gameService;
+        private static IUIService _uiService;
+        private static IUpgradeService _upgradeService;
+        private static INotificationService _notificationService;
+        
+        public static ServiceManager Instance => _instance;
+        
+        public static IGameService Game => _gameService ??= GetService<IGameService>();
+        public static IUIService UI => _uiService ??= GetService<IUIService>();
+        public static IUpgradeService Upgrade => _upgradeService ??= GetService<IUpgradeService>();
+        public static INotificationService Notification => _notificationService ??= GetService<INotificationService>();
+        
+        public static T Get<T>() where T : class => GetService<T>();
+        public static bool IsAvailable<T>() where T : class => GetService<T>() != null;
         
         private void Awake()
         {
-            // Make this object persist across scenes
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
@@ -28,145 +40,109 @@ namespace ProjectCoffee.Core
             
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            
-            // Initialize services
             InitializeServices();
         }
         
         private void InitializeServices()
         {
-        Debug.Log("ServiceManager: Initializing services...");
-        
-        var serviceLocator = ServiceLocator.Instance;
-        
-        // IMPORTANT: Register UIManager service FIRST to ensure notifications work
-        if (uiManager != null)
-        {
-            serviceLocator.RegisterService<IUIService>(uiManager);
-            var notificationService = new NotificationService(uiManager);
-            serviceLocator.RegisterService<INotificationService>(notificationService);
-            Debug.Log("ServiceManager: UIManager and NotificationService registered successfully");
+            RegisterCoreServices();
+            ClearCache();
+            EventBus.NotifyServicesInitialized();
         }
-        else
+        
+        private void RegisterCoreServices()
         {
-            Debug.LogError("ServiceManager: UIManager reference is missing! UI services will not work properly. Check Inspector references!");
-            // Try to find UIManager in scene as fallback
-        uiManager = FindObjectOfType<UIManager>();
             if (uiManager != null)
             {
-                Debug.Log("ServiceManager: Found UIManager in scene as fallback");
-                serviceLocator.RegisterService<IUIService>(uiManager);
-                var notificationService = new NotificationService(uiManager);
-                serviceLocator.RegisterService<INotificationService>(notificationService);
-        }
-        }
-        
-        // Find and register GameManager service
-        var gameManager = FindObjectOfType<GameManager>();
-        if (gameManager != null)
-        {
-            serviceLocator.RegisterService<IGameService>(gameManager);
-            Debug.Log("ServiceManager: GameManager service registered successfully");
-        }
-        else
-        {
-            Debug.LogError("ServiceManager: GameManager not found in scene! Game service will not work properly.");
-        }
-        
-        // Create services that don't require Unity components
-        // IMPORTANT: Create UpgradeService AFTER other services it depends on
-        var upgradeService = new UpgradeService();
-        serviceLocator.RegisterService<IUpgradeService>(upgradeService);
-        Debug.Log("ServiceManager: UpgradeService registered successfully");
-        
-        // Verify critical services
-        if (!serviceLocator.HasService<INotificationService>())
-        {
-            Debug.LogError("ServiceManager: Critical service INotificationService is missing!");
-        }
-        if (!serviceLocator.HasService<IGameService>())
-        {
-            Debug.LogError("ServiceManager: Critical service IGameService is missing!");
-        }
-        if (!serviceLocator.HasService<IUpgradeService>())
-        {
-            Debug.LogError("ServiceManager: Critical service IUpgradeService is missing!");
-        }
-            
-            // Register AudioManager service if available
-            if (audioManager != null)
+                Register<IUIService>(uiManager);
+                Register<INotificationService>(new NotificationService(uiManager));
+            }
+            else
             {
-                // TODO: Create and register IAudioService
+                uiManager = FindObjectOfType<UIManager>();
+                if (uiManager != null)
+                {
+                    Register<IUIService>(uiManager);
+                    Register<INotificationService>(new NotificationService(uiManager));
+                }
             }
             
-            // Flag that services are initialized
-            _servicesInitialized = true;
+            var gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                Register<IGameService>(gameManager);
+            }
             
-            // Notify listeners that services are initialized
-            EventBus.NotifyServicesInitialized();
-            
-            Debug.Log("ServiceManager: Services initialized successfully");
+            Register<IUpgradeService>(new UpgradeService());
         }
         
-        /// <summary>
-        /// Register machine-specific services
-        /// </summary>
+        public void Register<T>(T service) where T : class
+        {
+            var type = typeof(T);
+            _services[type] = service;
+        }
+        
         public void RegisterMachineService<T>(T service) where T : class, IMachineService
         {
-            if (service != null)
-            {
-                ServiceLocator.Instance.RegisterService<T>(service);
-                Debug.Log($"ServiceManager: Registered machine service of type {typeof(T).Name}");
-            }
+            Register<T>(service);
         }
         
-        /// <summary>
-        /// Create core services if they don't exist yet
-        /// </summary>
-        public void EnsureCoreServicesExist()
+        private static T GetService<T>() where T : class
         {
-            var serviceLocator = ServiceLocator.Instance;
+            if (_instance == null) return null;
             
-            // Create UpgradeService if it doesn't exist
-            if (!serviceLocator.HasService<IUpgradeService>())
-            {
-                var upgradeService = new UpgradeService();
-                serviceLocator.RegisterService<IUpgradeService>(upgradeService);
-                Debug.Log("ServiceManager: Created missing UpgradeService");
-            }
-            
-            // Create NotificationService if it doesn't exist but UIManager does
-            if (!serviceLocator.HasService<INotificationService>() && uiManager != null)
-            {
-                serviceLocator.RegisterService<INotificationService>(new NotificationService(uiManager));
-                Debug.Log("ServiceManager: Created missing NotificationService");
-            }
+            var type = typeof(T);
+            return _instance._services.TryGetValue(type, out var service) ? (T)service : null;
         }
         
-        /// <summary>
-        /// Check if a particular service exists
-        /// </summary>
+        public static void ClearCache()
+        {
+            _gameService = null;
+            _uiService = null;
+            _upgradeService = null;
+            _notificationService = null;
+        }
+        
         public bool HasService<T>() where T : class
         {
-            return ServiceLocator.Instance.HasService<T>();
+            return _services.ContainsKey(typeof(T));
         }
         
-        /// <summary>
-        /// Get a service of the specified type
-        /// </summary>
-        public T GetService<T>() where T : class
+        public T GetServiceInstance<T>() where T : class
         {
-            return ServiceLocator.Instance.GetService<T>();
+            return GetService<T>();
         }
         
-        /// <summary>
-        /// Static access to service manager instance
-        /// </summary>
-        public static ServiceManager Instance => _instance;
+        public void EnsureCoreServicesExist()
+        {
+            bool servicesCreated = false;
+            
+            if (!HasService<IUpgradeService>())
+            {
+                Register<IUpgradeService>(new UpgradeService());
+                servicesCreated = true;
+            }
+            
+            if (!HasService<INotificationService>() && uiManager != null)
+            {
+                Register<INotificationService>(new NotificationService(uiManager));
+                servicesCreated = true;
+            }
+            
+            if (servicesCreated)
+                ClearCache();
+        }
+    }
+    
+    public static class Services
+    {
+        public static IGameService Game => ServiceManager.Game;
+        public static IUIService UI => ServiceManager.UI;
+        public static IUpgradeService Upgrade => ServiceManager.Upgrade;
+        public static INotificationService Notification => ServiceManager.Notification;
         
-        /// <summary>
-        /// Check if all services have been initialized
-        /// </summary>
-        public bool ServicesInitialized => _servicesInitialized;
+        public static T Get<T>() where T : class => ServiceManager.Get<T>();
+        public static bool IsAvailable<T>() where T : class => ServiceManager.IsAvailable<T>();
+        public static void ClearCache() => ServiceManager.ClearCache();
     }
 }

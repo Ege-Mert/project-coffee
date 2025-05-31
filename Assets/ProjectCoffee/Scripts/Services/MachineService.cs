@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 using ProjectCoffee.Core;
+using CoreServices = ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Services
 {
@@ -67,30 +67,18 @@ namespace ProjectCoffee.Services
         /// </summary>
         protected void NotifyUser(string message)
         {
-        // First, try to use the event for direct subscribers
-        OnNotificationRequested?.Invoke(message);
-        
-        // Try to get notification service from ServiceManager first
-        INotificationService notificationService = null;
-        if (ServiceManager.Instance != null)
+            OnNotificationRequested?.Invoke(message);
+            
+            var notificationService = CoreServices.Notification;
+            if (notificationService != null)
             {
-            notificationService = ServiceManager.Instance.GetService<INotificationService>();
+                notificationService.ShowNotification(message);
+            }
+            else if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowNotification(message);
+            }
         }
-        // Fallback to ServiceLocator if ServiceManager is unavailable
-        else
-        {
-            notificationService = ServiceLocator.Instance.GetService<INotificationService>();
-        }
-        
-        // Show notification if service is available
-        notificationService?.ShowNotification(message);
-        
-        // If no service is available, fallback to direct UIManager call
-        if (notificationService == null && UIManager.Instance != null)
-        {
-            UIManager.Instance.ShowNotification(message);
-        }
-    }
         
         /// <summary>
         /// Update process progress

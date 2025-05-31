@@ -3,47 +3,37 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>
-/// Base class for spinnable UI elements
-/// </summary>
 public class Spinnable : InteractiveElementBase, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
-    [SerializeField] protected float requiredSpinAngle = 360f; // One full rotation
+    [SerializeField] protected float requiredSpinAngle = 360f;
     [SerializeField] protected RectTransform rotationCenter;
     [SerializeField] protected Image spinProgressIndicator;
     [SerializeField] protected AudioSource spinProgressSound;
     [SerializeField] protected AudioSource spinCompletedSound;
-    [SerializeField] protected bool resetOnRelease = false;
-    [SerializeField] protected bool allowBothDirections = true; // Setting for spin direction
+    [SerializeField] protected bool resetOnSpinComplete = false; // Changed default to false
+    [SerializeField] protected bool allowBothDirections = true;
     
     protected bool isSpinning = false;
     protected Vector2 lastDragPosition;
     protected float currentSpinAngle = 0f;
     protected int spinCount = 0;
+    protected Quaternion originalRotation;
     
     public int SpinCount => spinCount;
-    
     public event Action<int> OnSpinCompleted;
     
     protected virtual void Awake()
     {
-        // Removed the base.Awake() call since InteractiveElementBase doesn't have an Awake method
-        
         if (rotationCenter == null)
-        {
             rotationCenter = GetComponent<RectTransform>();
-        }
+        
+        originalRotation = rotationCenter.rotation;
         
         if (spinProgressIndicator != null)
         {
             spinProgressIndicator.fillAmount = 0f;
             spinProgressIndicator.gameObject.SetActive(false);
         }
-        
-        // Print debug info
-        Debug.Log($"SpinnableUI initialized: {gameObject.name}");
-        Debug.Log($"Required spin angle: {requiredSpinAngle}");
-        Debug.Log($"Allow both directions: {allowBothDirections}");
     }
     
     public override void OnInteractionStart()
@@ -71,12 +61,10 @@ public class Spinnable : InteractiveElementBase, IPointerDownHandler, IPointerUp
     
     public virtual void OnPointerDown(PointerEventData eventData)
     {
-        if (!CanInteract())
-            return;
+        if (!CanInteract()) return;
             
-        Debug.Log("Spinnable pointer down");
         isSpinning = true;
-        currentSpinAngle = 0f;
+        // Don't reset currentSpinAngle - let user continue from where they left off
         lastDragPosition = eventData.position;
         
         OnInteractionStart();
@@ -84,70 +72,46 @@ public class Spinnable : InteractiveElementBase, IPointerDownHandler, IPointerUp
     
     public virtual void OnPointerUp(PointerEventData eventData)
     {
-        if (!isSpinning)
-            return;
+        if (!isSpinning) return;
             
-        Debug.Log("Spinnable pointer up");
         isSpinning = false;
         
-        if (resetOnRelease)
-        {
-            // Reset rotation
-            rotationCenter.rotation = Quaternion.identity;
-        }
-        
+        // Don't reset rotation here - let the user continue from where they stopped
         OnInteractionEnd();
     }
     
     public virtual void OnDrag(PointerEventData eventData)
     {
-        if (!isSpinning)
-            return;
+        if (!isSpinning) return;
             
         Vector2 currentPosition = eventData.position;
         Vector2 centerPosition = RectTransformUtility.WorldToScreenPoint(null, rotationCenter.position);
         
-        // Calculate angles
         Vector2 previousVector = lastDragPosition - centerPosition;
         Vector2 currentVector = currentPosition - centerPosition;
         
         float previousAngle = Mathf.Atan2(previousVector.y, previousVector.x) * Mathf.Rad2Deg;
         float currentAngle = Mathf.Atan2(currentVector.y, currentVector.x) * Mathf.Rad2Deg;
         
-        // Calculate angle change (delta)
         float angleDelta = Mathf.DeltaAngle(previousAngle, currentAngle);
         
-        // Update visual rotation
         rotationCenter.Rotate(0, 0, angleDelta);
         
-        // Update total angle and check for completion
-        if (Mathf.Abs(angleDelta) > 1f) // Minimum threshold to count as spinning
+        if (Mathf.Abs(angleDelta) > 1f)
         {
-            // Check direction based on setting
             bool validDirection = allowBothDirections || angleDelta > 0;
             
             if (validDirection)
             {
-                // Count the absolute value of the angle change if both directions are allowed
                 float angleToAdd = allowBothDirections ? Mathf.Abs(angleDelta) : angleDelta;
                 currentSpinAngle += angleToAdd;
                 
-                // Update progress indicator
                 if (spinProgressIndicator != null)
                 {
                     float progress = (currentSpinAngle % requiredSpinAngle) / requiredSpinAngle;
                     spinProgressIndicator.fillAmount = progress;
-                    
-                    // Play progress sound on increments
-                    if (progress > 0.25f && progress < 0.35f || 
-                        progress > 0.5f && progress < 0.6f || 
-                        progress > 0.75f && progress < 0.85f)
-                    {
-                        InteractionFeedbackHelper.PlaySound(spinProgressSound);
-                    }
                 }
                 
-                // Check if completed a full rotation
                 if (currentSpinAngle >= requiredSpinAngle)
                 {
                     spinCount++;
@@ -162,20 +126,37 @@ public class Spinnable : InteractiveElementBase, IPointerDownHandler, IPointerUp
     
     protected virtual void OnSpinComplete()
     {
-        Debug.Log($"Spin completed! Spin count: {spinCount}");
-        
-        // Play completion sound
         InteractionFeedbackHelper.PlaySound(spinCompletedSound);
-        
-        // Add visual feedback
         InteractionFeedbackHelper.PlayBounceAnimation(transform);
-        
-        // Notify listeners
         OnSpinCompleted?.Invoke(spinCount);
+        
+        // Fixed: Only reset rotation if explicitly requested (default is now false)
+        if (resetOnSpinComplete)
+        {
+            ResetRotation();
+        }
     }
     
     public void ResetSpinCount()
     {
         spinCount = 0;
+        currentSpinAngle = 0f;
+        // Don't automatically reset rotation when resetting spin count
+    }
+    
+    public void ResetRotation()
+    {
+        if (rotationCenter != null)
+            rotationCenter.rotation = originalRotation;
+        currentSpinAngle = 0f; // Also reset progress when resetting rotation
+    }
+    
+    // Added: Method to reset both spin count and rotation if needed
+    public void ResetCompletely()
+    {
+        spinCount = 0;
+        currentSpinAngle = 0f;
+        if (rotationCenter != null)
+            rotationCenter.rotation = originalRotation;
     }
 }

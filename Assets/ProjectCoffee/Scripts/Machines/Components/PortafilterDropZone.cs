@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectCoffee.Interaction.Helpers;
+using ProjectCoffee.Machines;
 
 /// <summary>
 /// Advanced drop zone specifically for portafilters (updated with item tracking)

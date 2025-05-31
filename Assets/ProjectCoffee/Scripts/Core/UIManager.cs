@@ -4,7 +4,6 @@ using UnityEngine.UI;
 using ProjectCoffee.UI;
 using ProjectCoffee.Core;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 using TMPro;
 
 public class UIManager : MonoBehaviour, IUIService
@@ -41,8 +40,8 @@ public class UIManager : MonoBehaviour, IUIService
         if (upgradeButton != null)
             upgradeButton.onClick.AddListener(ShowUpgradeScreen);
         
-        UpdateMoneyDisplay(GameManager.Instance.Money);
-        UpdateDayDisplay(GameManager.Instance.CurrentDay);
+        UpdateMoneyDisplay(Services.Game?.Money ?? 0);
+        UpdateDayDisplay(Services.Game?.CurrentDay ?? 1);
         
         if (notificationPanel != null)
             notificationPanel.SetActive(false);
@@ -53,8 +52,8 @@ public class UIManager : MonoBehaviour, IUIService
     
     private void Update()
     {
-        if (GameManager.Instance.IsDayActive)
-            UpdateTimeDisplay(GameManager.Instance.DayTimeRemaining);
+        if (Services.Game != null && Services.Game.IsDayActive)
+            UpdateTimeDisplay(Services.Game.DayTimeRemaining);
     }
     
     public void UpdateMoneyDisplay(int amount)
@@ -118,11 +117,8 @@ public class UIManager : MonoBehaviour, IUIService
     
     public void OnStartDayButtonClicked()
     {
-        var gameService = ServiceLocator.Instance.GetService<IGameService>();
-        if (gameService != null)
-            gameService.StartDay();
-        else if (GameManager.Instance != null)
-            GameManager.Instance.StartDay();
+        if (Services.Game != null)
+            Services.Game.StartDay();
         
         if (endOfDayPanel != null)
             endOfDayPanel.SetActive(false);

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
+using ProjectCoffee.Machines;
 /// <summary>
 /// Extended drop zone specifically for ground coffee output
 /// </summary>

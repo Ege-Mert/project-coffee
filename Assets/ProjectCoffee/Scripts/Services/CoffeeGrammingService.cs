@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Services
 {
@@ -221,7 +220,7 @@ namespace ProjectCoffee.Services
         /// <summary>
         /// Update process progress (available to MonoBehaviour for animation)
         /// </summary>
-        public void UpdateProgress(float progress)
+        public new void UpdateProgress(float progress)
         {
             // Call the protected base method to handle the event invocation
             base.UpdateProgress(progress);

@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectCoffee.Machines;
 
 /// <summary>
 /// Advanced drop zone specifically for ground coffee

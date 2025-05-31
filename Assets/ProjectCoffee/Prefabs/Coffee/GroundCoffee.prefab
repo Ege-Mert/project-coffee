@@ -28,7 +28,7 @@ RectTransform:
   m_GameObject: {fileID: 1673364023037933896}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.2006687, y: 1.2006687, z: 1.2006687}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5253465588815404022}
@@ -92,6 +92,9 @@ MonoBehaviour:
   returnToOriginalPositionOnFail: 1
   parentCanvas: {fileID: 0}
   image: {fileID: 6987844394802164662}
+  dragSound: {fileID: 0}
+  dropSound: {fileID: 0}
+  debugMode: 1
   grindStageSprites:
   - {fileID: 21300000, guid: 39b89ea328c2cad4abef27aedb17a4a3, type: 3}
   - {fileID: 3625043607559282579, guid: 045b15ec09bba42448d89db77fa6f20a, type: 3}

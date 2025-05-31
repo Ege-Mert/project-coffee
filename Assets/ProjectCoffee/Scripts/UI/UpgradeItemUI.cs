@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Core;
-using ProjectCoffee.Core.Services;
 using ProjectCoffee.Services.Interfaces;
 using System;
 using TMPro;
+using CoreServices = ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.UI
 {
@@ -56,7 +56,7 @@ namespace ProjectCoffee.UI
         {
             bool canAfford = false;
             
-            var upgradeService = ServiceLocator.Instance.GetService<IUpgradeService>();
+            var upgradeService = CoreServices.Upgrade;
             if (upgradeService != null)
             {
                 canAfford = upgradeService.CanAffordUpgrade(machineId);

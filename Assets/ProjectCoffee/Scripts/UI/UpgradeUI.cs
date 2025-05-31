@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectCoffee.Core;
-using ProjectCoffee.Core.Services;
 using ProjectCoffee.Services.Interfaces;
 using System.Collections.Generic;
 using TMPro;
+using CoreServices = ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.UI
 {
@@ -54,11 +54,8 @@ namespace ProjectCoffee.UI
             if (upgradeService != null)
                 upgradeService.OnUpgradesChanged -= HandleUpgradesChanged;
             
-            upgradeService = ServiceManager.Instance?.GetService<IUpgradeService>() 
-                ?? ServiceLocator.Instance.GetService<IUpgradeService>();
-                
-            gameService = ServiceManager.Instance?.GetService<IGameService>() 
-                ?? ServiceLocator.Instance.GetService<IGameService>();
+            upgradeService = CoreServices.Upgrade;
+            gameService = CoreServices.Game;
             
             if (upgradeService != null)
             {
@@ -150,7 +147,7 @@ namespace ProjectCoffee.UI
         {
             if (moneyText != null)
             {
-                int currentMoney = gameService?.Money ?? GameManager.Instance?.Money ?? 0;
+                int currentMoney = CoreServices.Game?.Money ?? 0;
                 moneyText.text = $"Money: ${currentMoney}";
             }
         }

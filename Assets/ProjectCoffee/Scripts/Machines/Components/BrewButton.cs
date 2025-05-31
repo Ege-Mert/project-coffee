@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using ProjectCoffee.Machines;
 
 public class BrewButton : Clickable
 {
@@ -7,14 +8,14 @@ public class BrewButton : Clickable
     [SerializeField] private EspressoMachine espressoMachine;
     
     // Event for when button is clicked
-    public UnityEvent OnClicked;
+    public new UnityEvent OnClicked;
     
     protected override void OnClick()
     {
         // If we have a direct reference, use it (for backward compatibility)
         if (espressoMachine != null)
         {
-            espressoMachine.OnBrewButtonClick();
+            espressoMachine.OnBrewButtonClicked();
         }
         
         // Invoke the Unity event so other components can respond

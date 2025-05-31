@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
+using ProjectCoffee.Machines;
 /// <summary>
 /// Coffee bean bag for adding beans to grinder
 /// </summary>

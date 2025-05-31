@@ -1,11 +1,6 @@
 using System;
-using System.Collections;
-using DG.Tweening;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using ProjectCoffee.Core;
-using ProjectCoffee.Core.Services;
 using ProjectCoffee.Services.Interfaces;
 
 public class GameManager : MonoBehaviour, IGameService
@@ -45,7 +40,9 @@ public class GameManager : MonoBehaviour, IGameService
             dayTimer += Time.deltaTime;
             
             if (dayTimer >= dayLengthInSeconds)
+            {
                 EndDay();
+            }
         }
     }
     
@@ -62,16 +59,14 @@ public class GameManager : MonoBehaviour, IGameService
         currentDay++;
         EventBus.NotifyDayEnded(currentDay - 1);
         
-        var uiService = ServiceLocator.Instance.GetService<IUIService>();
-        if (uiService != null)
+        if (Services.UI != null)
         {
-            uiService.ShowEndOfDayScreen();
-            uiService.ShowUpgradeScreen();
+            Services.UI.ShowEndOfDayScreen();
+            Services.UI.ShowUpgradeScreen();
         }
-        else if (UIManager.Instance != null) 
+        else
         {
-            UIManager.Instance.ShowEndOfDayScreen();
-            UIManager.Instance.ShowUpgradeScreen();
+            Debug.LogError("Cannot show end of day screens: No UI service available");
         }
     }
     
