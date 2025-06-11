@@ -1,13 +1,14 @@
 using UnityEngine;
 using ProjectCoffee.Interaction.Helpers;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Machines.Dosing;
 
 /// <summary>
 /// Advanced drop zone specifically for portafilters (updated with item tracking)
 /// </summary>
 public class PortafilterDropZone : DropZone
 {
-    [SerializeField] private CoffeeGrammingMachine parentMachine;
+    [SerializeField] private DosingMachine parentMachine;
     
     private Portafilter currentPortafilter;
     private DropZoneItemTracker itemTracker;

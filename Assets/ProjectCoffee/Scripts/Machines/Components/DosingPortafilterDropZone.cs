@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using ProjectCoffee.Interaction.Helpers;
+using ProjectCoffee.Machines.Dosing;
 using UnityEngine;
 
 
@@ -9,9 +10,9 @@ namespace ProjectCoffee.Machines.Components
     /// <summary>
     /// Updated drop zone specifically for portafilters in the gramming machine
     /// </summary>
-    public class GrammingPortafilterDropZone : DropZone
+    public class DosingPortafilterDropZone : DropZone
     {
-        [SerializeField] private CoffeeGrammingMachine parentMachine;
+        [SerializeField] private DosingMachine parentMachine;
         
         private Portafilter currentPortafilter;
         private DropZoneItemTracker itemTracker;

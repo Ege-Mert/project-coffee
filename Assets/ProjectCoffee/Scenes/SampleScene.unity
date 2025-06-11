@@ -1330,10 +1330,10 @@ GameObject:
   - component: {fileID: 435748849}
   - component: {fileID: 435748852}
   - component: {fileID: 435748851}
-  - component: {fileID: 435748850}
+  - component: {fileID: 435748854}
   - component: {fileID: 435748853}
   m_Layer: 5
-  m_Name: CoffeeGrammingMachine - Image
+  m_Name: DosingMachine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1367,36 +1367,6 @@ RectTransform:
   m_AnchoredPosition: {x: 256, y: 200}
   m_SizeDelta: {x: 122.42, y: 65.614}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &435748850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 435748848}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87752cc36850244409a90431ac34ddd2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: 345f5a9cdc910674fa4207e4a1d3ed0b, type: 2}
-  currentState: 0
-  upgradeLevel: 0
-  processProgress: 0
-  OnProcessingStarted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnProcessingCompleted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnProgressUpdated:
-    m_PersistentCalls:
-      m_Calls: []
-  OnStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  portafilterZone: {fileID: 1114903402}
-  groundCoffeeZone: {fileID: 1873983885}
 --- !u!114 &435748851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1444,20 +1414,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 435748848}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7296b15f38252564eb620713e9a82ae9, type: 3}
+  m_Script: {fileID: 11500000, guid: b32d4fdbdc931e34b9429411d292b3fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  idleIndicator: {fileID: 1786343779}
+  idleIndicator: {fileID: 0}
   readyIndicator: {fileID: 0}
   processingIndicator: {fileID: 0}
   completeIndicator: {fileID: 0}
-  progressBar: {fileID: 0}
+  progressBar: {fileID: 1786343781}
   statusText: {fileID: 0}
   processingParticles: {fileID: 0}
   processStartSound: {fileID: 0}
   processCompleteSound: {fileID: 0}
   machineAnimator: {fileID: 0}
-  grammingButton: {fileID: 258512286}
+  dosingButton: {fileID: 258512286}
   autoDoseButton: {fileID: 973253661}
   portafilterGramText: {fileID: 548899711}
   storageGramText: {fileID: 1890042010}
@@ -1492,14 +1462,44 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  manualGrammingIndicator: {fileID: 0}
+  manualDosingIndicator: {fileID: 0}
   semiAutoIndicator: {fileID: 0}
-  autoGrammingIndicator: {fileID: 0}
-  grammingToolSpawnPoint: {fileID: 0}
-  grammingToolPrefab: {fileID: 0}
-  grammingParticles: {fileID: 0}
-  grammingSound: {fileID: 0}
+  autoDosingIndicator: {fileID: 0}
+  dosingToolSpawnPoint: {fileID: 0}
+  dosingToolPrefab: {fileID: 0}
+  dosingParticles: {fileID: 0}
+  dosingSound: {fileID: 0}
   autoDoseSound: {fileID: 0}
+--- !u!114 &435748854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 435748848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 420943f9dd6797c4ba21463a6c5f338e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: d33aeded9cfe1f34dbc4dbc45945ca2d, type: 2}
+  currentState: 0
+  upgradeLevel: 0
+  processProgress: 0
+  OnProcessingStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProgressUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  portafilterZone: {fileID: 1114903402}
+  groundCoffeeZone: {fileID: 1873983885}
 --- !u!1 &510487377
 GameObject:
   m_ObjectHideFlags: 0
@@ -3330,7 +3330,7 @@ MonoBehaviour:
   centerItemInZone: 1
   preserveItemSize: 1
   debugLogs: 1
-  parentMachine: {fileID: 435748850}
+  parentMachine: {fileID: 435748854}
 --- !u!1 &1136698211
 GameObject:
   m_ObjectHideFlags: 0
@@ -5494,7 +5494,7 @@ MonoBehaviour:
   centerItemInZone: 1
   preserveItemSize: 1
   debugLogs: 1
-  parentMachine: {fileID: 435748850}
+  parentMachine: {fileID: 435748854}
 --- !u!1 &1890042008
 GameObject:
   m_ObjectHideFlags: 0
@@ -6285,7 +6285,7 @@ MonoBehaviour:
   OnStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  groundCoffeeOutputZone: {fileID: 0}
+  groundCoffeeOutputZone: {fileID: 1136698216}
   groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
 --- !u!114 &2095772922
 MonoBehaviour:

@@ -1,12 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// Configuration for the coffee gramming (dosing) machine
+/// Configuration for the coffee dosing machine
 /// </summary>
-[CreateAssetMenu(fileName = "GrammingMachineConfig", menuName = "Coffee Game/Machine Configs/Gramming Machine Config")]
-public class GrammingMachineConfig : MachineConfig
+[CreateAssetMenu(fileName = "DosingMachineConfig", menuName = "Coffee Game/Machine Configs/Dosing Machine Config")]
+public class DosingMachineConfig : MachineConfig
 {
-    [Header("Gramming Machine Specific Settings")]
+    [Header("Dosing Machine Specific Settings")]
     public float grammingRate = 2f; // Grams per second when dispensing
     public float idealGramAmount = 18f; 
     public float gramTolerance = 1f; // +/- grams for "perfect" range

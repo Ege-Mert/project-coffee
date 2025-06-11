@@ -9,30 +9,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11f2bf0a3faba394f801b2452fe2dba4, type: 3}
-  m_Name: GrammingMachineConfig
+  m_Script: {fileID: 11500000, guid: 7cb11cf13e282f14c9ec8734024d08f6, type: 3}
+  m_Name: DosingMachineConfig
   m_EditorClassIdentifier: 
-  machineId: Gramming_01
-  displayName: Gramming
+  machineId: DosingMachine_01
+  displayName: DosingMachine
   maxUpgradeLevel: 2
-  baseProcessTime: 39.22
+  baseProcessTime: 3
   upgradeLevels:
-  - upgradeName: Manual Dosaging
+  - upgradeName: Button
     description: 
-    upgradeCost: 0
-    processTimeMultiplier: 0
-    interactionType: 2
-    upgradeIcon: {fileID: 0}
-  - upgradeName: Semi-Automatic Dosaging
-    description: 
-    upgradeCost: 0
-    processTimeMultiplier: 1
+    upgradeCost: 50
+    processTimeMultiplier: 2
     interactionType: 1
     upgradeIcon: {fileID: 0}
-  - upgradeName: Automatic Dosaging
+  - upgradeName: Auto
     description: 
-    upgradeCost: 0
-    processTimeMultiplier: 1
+    upgradeCost: 100
+    processTimeMultiplier: 2
     interactionType: 4
     upgradeIcon: {fileID: 0}
   grammingRate: 2
@@ -42,6 +36,6 @@ MonoBehaviour:
   poorQualityThreshold: 0.5
   goodQualityThreshold: 0.8
   level0HoldFactor: 1
-  level1AutoDoseTime: 4
+  level1AutoDoseTime: 2
   level1DoseAmount: 18
   level2AutoDetectionInterval: 0.5

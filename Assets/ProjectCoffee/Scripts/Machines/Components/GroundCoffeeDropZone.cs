@@ -1,12 +1,13 @@
 using UnityEngine;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Machines.Dosing;
 
 /// <summary>
 /// Advanced drop zone specifically for ground coffee
 /// </summary>
 public class GroundCoffeeDropZone : DropZone
 {
-    [SerializeField] private CoffeeGrammingMachine parentMachine;
+    [SerializeField] private DosingMachine parentMachine;
     
     public override bool CanAccept(Draggable item)
     {
