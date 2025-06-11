@@ -3342,7 +3342,7 @@ GameObject:
   - component: {fileID: 1136698212}
   - component: {fileID: 1136698215}
   - component: {fileID: 1136698214}
-  - component: {fileID: 1136698213}
+  - component: {fileID: 1136698216}
   m_Layer: 5
   m_Name: GroundCoffeeOutput
   m_TagString: Untagged
@@ -3369,28 +3369,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -323.90588}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1136698213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1136698211}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 110ec3f598062a54ab088509662ddd8e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isActive: 1
-  highlightImage: {fileID: 0}
-  validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
-  invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
-  validDropSound: {fileID: 0}
-  invalidDropSound: {fileID: 0}
-  centerItemInZone: 1
-  preserveItemSize: 1
-  debugLogs: 1
-  parentGrinder: {fileID: 2095772918}
 --- !u!114 &1136698214
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3429,6 +3407,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1136698211}
   m_CullTransparentMesh: 1
+--- !u!114 &1136698216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136698211}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 110ec3f598062a54ab088509662ddd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isActive: 1
+  highlightImage: {fileID: 0}
+  validHighlightColor: {r: 0.5, g: 1, b: 0.5, a: 0.5}
+  invalidHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 0.5}
+  validDropSound: {fileID: 0}
+  invalidDropSound: {fileID: 0}
+  centerItemInZone: 1
+  preserveItemSize: 1
+  debugLogs: 1
+  parentGrinder: {fileID: 2095772921}
 --- !u!1 &1138546024
 GameObject:
   m_ObjectHideFlags: 0
@@ -4097,7 +4097,7 @@ MonoBehaviour:
   spinProgressIndicator: {fileID: 192375236}
   spinProgressSound: {fileID: 0}
   spinCompletedSound: {fileID: 0}
-  resetOnSpinComplete: 1
+  resetOnSpinComplete: 0
   allowBothDirections: 1
 --- !u!114 &1321812442
 MonoBehaviour:
@@ -6055,7 +6055,7 @@ MonoBehaviour:
   interactionCooldown: 0.2
   interactionSound: {fileID: 0}
   clickSound: {fileID: 0}
-  targetGrinder: {fileID: 2095772918}
+  targetGrinder: {fileID: 2095772921}
   beansPerClick: 1
   beanPrefab: {fileID: 1526222732813452525, guid: ac06ed5d85c94134c932cc380e8fe92a, type: 3}
   beanJumpDuration: 0.5
@@ -6185,8 +6185,8 @@ GameObject:
   - component: {fileID: 2095772917}
   - component: {fileID: 2095772920}
   - component: {fileID: 2095772919}
-  - component: {fileID: 2095772918}
   - component: {fileID: 2095772921}
+  - component: {fileID: 2095772922}
   m_Layer: 5
   m_Name: CoffeeGrinder - Image
   m_TagString: Untagged
@@ -6219,36 +6219,6 @@ RectTransform:
   m_AnchoredPosition: {x: 679, y: 188.17}
   m_SizeDelta: {x: 88.64, y: 41.945}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &2095772918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2095772916}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 978c0a624f286fc46b388612d2545973, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
-  currentState: 0
-  upgradeLevel: 0
-  processProgress: 0
-  OnProcessingStarted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnProcessingCompleted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnProgressUpdated:
-    m_PersistentCalls:
-      m_Calls: []
-  OnStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  groundCoffeeOutputZone: {fileID: 1136698213}
-  groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
 --- !u!114 &2095772919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6296,7 +6266,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 2095772916}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6129d6751ad91f24da628fc162be8b5a, type: 3}
+  m_Script: {fileID: 11500000, guid: 12345678901234567890123456789015, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: a4e339cb64a1c4b4090426753fba0c12, type: 2}
+  currentState: 0
+  upgradeLevel: 0
+  processProgress: 0
+  OnProcessingStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProgressUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  groundCoffeeOutputZone: {fileID: 0}
+  groundCoffeePrefab: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
+--- !u!114 &2095772922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095772916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63ddc9c0287edde46b58715f6801e6ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   idleIndicator: {fileID: 0}
@@ -6312,12 +6312,11 @@ MonoBehaviour:
   beansLevelImage: {fileID: 142200152}
   grindHandle: {fileID: 1321812441}
   grindButton: {fileID: 1527944285}
-  groundCoffeeOutputVisual: {fileID: 1673364023037933896, guid: 5b02b15bd52d3294fbd3a93cf3020aff, type: 3}
-  keepHandleAlwaysVisible: 0
+  groundCoffeeOutputVisual: {fileID: 0}
   beansLevelAnimationDuration: 0.3
-  manualGrindIndicator: {fileID: 192375234}
-  buttonGrindIndicator: {fileID: 192375234}
-  autoGrindIndicator: {fileID: 192375234}
+  manualGrindIndicator: {fileID: 0}
+  buttonGrindIndicator: {fileID: 0}
+  autoGrindIndicator: {fileID: 0}
 --- !u!1 &2095999735
 GameObject:
   m_ObjectHideFlags: 0

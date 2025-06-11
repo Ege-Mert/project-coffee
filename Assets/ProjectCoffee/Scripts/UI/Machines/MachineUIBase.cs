@@ -40,6 +40,15 @@ namespace ProjectCoffee.UI.Machines
         
         protected virtual void Start()
         {
+            // Delay UI setup to ensure machine is initialized first
+            StartCoroutine(DelayedUISetup());
+        }
+        
+        protected virtual System.Collections.IEnumerator DelayedUISetup()
+        {
+            // Wait for machine to initialize
+            yield return null;
+            
             SetupMachineSpecificUI();
             SubscribeToEvents();
             UpdateVisualState(MachineState.Idle);

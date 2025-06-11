@@ -4,15 +4,16 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Machines.Grinder;
 /// <summary>
 /// Extended drop zone specifically for ground coffee output
 /// </summary>
 public class GroundCoffeeOutputZone : DropZone
 {
-    [SerializeField] private CoffeeGrinder parentGrinder;
+    [SerializeField] private GrinderMachine parentGrinder;
     
     // Allow setting the parent grinder from code
-    public void SetParentGrinder(CoffeeGrinder grinder)
+    public void SetParentGrinder(GrinderMachine grinder)
     {
         if (parentGrinder == null)
         {

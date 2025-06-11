@@ -4,12 +4,13 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Machines.Grinder;
 /// <summary>
 /// Coffee bean bag for adding beans to grinder
 /// </summary>
 public class CoffeeBeanBag : Clickable
 {
-    [SerializeField] private CoffeeGrinder targetGrinder;
+    [SerializeField] private GrinderMachine targetGrinder;
     [SerializeField] private int beansPerClick = 1;
     // [SerializeField] private ParticleSystem beanParticles;
     // [SerializeField] private AudioSource beanPourSound;
