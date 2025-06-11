@@ -17,7 +17,9 @@ public class GrinderConfig : MachineConfig
     
     [Header("Level 1 Settings")]
     public float level1GrindTime = 3f;
+    public float level1ProcessDelay = 1.0f; // Delay between button-triggered bean processing
     
     [Header("Level 2 Settings")]
     public float level2GrindTime = 1.5f; // Shorter grinding time for automatic level
+    public float level2AutoProcessDelay = 1.0f; // Delay between automatic bean processing
 }

@@ -18,6 +18,7 @@ namespace ProjectCoffee.UI.Machines.Grinder
         [SerializeField] private Image beansLevelImage;
         [SerializeField] private Spinnable grindHandle;
         [SerializeField] private Button grindButton;
+        [SerializeField] private Button stopButton;
         [SerializeField] private GameObject groundCoffeeOutputVisual;
         
         [Header("Visual Settings")]
@@ -131,6 +132,12 @@ namespace ProjectCoffee.UI.Machines.Grinder
             grindButton.onClick.RemoveAllListeners();
             grindButton.onClick.AddListener(OnGrindButtonClicked);
             
+            if (stopButton != null)
+            {
+                stopButton.onClick.RemoveAllListeners();
+                stopButton.onClick.AddListener(OnStopButtonClicked);
+            }
+            
             UpdateButtonVisibility();
         }
         
@@ -141,6 +148,12 @@ namespace ProjectCoffee.UI.Machines.Grinder
                 bool shouldShow = service.UpgradeLevel == 1;
                 grindButton.gameObject.SetActive(shouldShow);
                 grindButton.interactable = shouldShow && Machine.CurrentBeanCount > 0;
+                
+                if (stopButton != null)
+                {
+                    stopButton.gameObject.SetActive(shouldShow);
+                    stopButton.interactable = shouldShow;
+                }
             }
         }
         
@@ -197,6 +210,15 @@ namespace ProjectCoffee.UI.Machines.Grinder
             if (Machine != null)
             {
                 Machine.OnButtonPress();
+            }
+        }
+        
+        private void OnStopButtonClicked()
+        {
+            Debug.Log("GrinderUI: Stop button clicked");
+            if (Machine != null)
+            {
+                Machine.StopContinuousProcessing();
             }
         }
         
@@ -297,6 +319,12 @@ namespace ProjectCoffee.UI.Machines.Grinder
                 bool shouldShow = level == 1;
                 grindButton.gameObject.SetActive(shouldShow);
                 grindButton.interactable = shouldShow && Machine.CurrentBeanCount > 0;
+                
+                if (stopButton != null)
+                {
+                    stopButton.gameObject.SetActive(shouldShow);
+                    stopButton.interactable = shouldShow;
+                }
             }
         }
         
@@ -406,6 +434,9 @@ namespace ProjectCoffee.UI.Machines.Grinder
             
             if (grindButton != null)
                 grindButton.onClick.RemoveListener(OnGrindButtonClicked);
+                
+            if (stopButton != null)
+                stopButton.onClick.RemoveListener(OnStopButtonClicked);
             
             if (grindingEffectCoroutine != null)
                 StopCoroutine(grindingEffectCoroutine);

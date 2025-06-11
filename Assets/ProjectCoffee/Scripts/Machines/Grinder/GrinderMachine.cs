@@ -97,16 +97,10 @@ namespace ProjectCoffee.Machines.Grinder
         
         private void LateUpdate()
         {
-            if (service == null || upgradeLevel != 2) return;
+            if (service == null) return;
             
-            // Handle auto-processing for level 2
-            service.CheckAutoProcess();
-            
-            // Update processing if in processing state
-            if (service.CurrentState == MachineState.Processing)
-            {
-                service.ProcessUpdate(Time.deltaTime);
-            }
+            // Always call ProcessUpdate to handle both processing and auto-process timing
+            service.ProcessUpdate(Time.deltaTime);
         }
         
         #endregion
@@ -120,6 +114,12 @@ namespace ProjectCoffee.Machines.Grinder
         {
             Debug.Log($"GrinderMachine: Adding {amount} beans");
             service?.AddBeans(amount);
+            
+            // Trigger auto-processing check for level 2 when beans are added
+            if (upgradeLevel == 2 && service != null)
+            {
+                service.CheckAutoProcess();
+            }
         }
         
         /// <summary>
@@ -161,6 +161,15 @@ namespace ProjectCoffee.Machines.Grinder
             Debug.Log("GrinderMachine: Ground coffee removed");
             currentGroundCoffee = null;
             service?.OnGroundCoffeeRemoved();
+        }
+        
+        /// <summary>
+        /// Stop continuous processing (for level 1)
+        /// </summary>
+        public void StopContinuousProcessing()
+        {
+            Debug.Log("GrinderMachine: Stopping continuous processing");
+            service?.StopContinuousProcessing();
         }
         
         #endregion

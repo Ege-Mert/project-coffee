@@ -1,5 +1,6 @@
 using System;
 using ProjectCoffee.Services;
+using UnityEngine;
 
 namespace ProjectCoffee.Machines.Grinder.Logic
 {
@@ -86,9 +87,18 @@ namespace ProjectCoffee.Machines.Grinder.Logic
         /// </summary>
         public void RemoveCoffee()
         {
+            bool hadCoffee = hasExistingCoffee;
+            GroundCoffee.GrindSize previousSize = currentCoffeeSize;
+            
             hasExistingCoffee = false;
             currentCoffeeSize = GroundCoffee.GrindSize.Small;
             ResetSpinCount();
+            
+            if (hadCoffee)
+            {
+                Debug.Log($"GrinderState: Coffee removed (was {previousSize}), current beans: {currentBeans}");
+            }
+            
             UpdateMachineState();
         }
         

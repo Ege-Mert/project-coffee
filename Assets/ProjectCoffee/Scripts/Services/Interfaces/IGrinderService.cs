@@ -28,5 +28,6 @@ namespace ProjectCoffee.Services.Interfaces
         void ProcessUpdate(float deltaTime);
         void OnGroundCoffeeRemoved();
         void CheckAutoProcess();
+        void StopContinuousProcessing();
     }
 }

@@ -184,6 +184,27 @@ namespace ProjectCoffee.Machines.Grinder.Logic
         }
         
         /// <summary>
+        /// Get the auto-process delay for level 2
+        /// </summary>
+        public float GetAutoProcessDelay()
+        {
+            return config.level2AutoProcessDelay;
+        }
+        
+        /// <summary>
+        /// Get the process delay for the specified upgrade level
+        /// </summary>
+        public float GetProcessDelay(int upgradeLevel)
+        {
+            return upgradeLevel switch
+            {
+                1 => config.level1ProcessDelay,
+                2 => config.level2AutoProcessDelay,
+                _ => 0f
+            };
+        }
+        
+        /// <summary>
         /// Get the interaction type for the current upgrade level
         /// </summary>
         public InteractionType GetInteractionType(int upgradeLevel)
@@ -205,7 +226,9 @@ namespace ProjectCoffee.Machines.Grinder.Logic
             if (upgradeLevel < 2) return false;
             if (!CanGrind(currentBeans, hasExistingCoffee, currentSize)) return false;
             
-            // Auto-process if we can grind and coffee isn't at max size
+            // Auto-process if we can grind and either:
+            // 1. No existing coffee, OR
+            // 2. Coffee exists but isn't at max size
             return !hasExistingCoffee || currentSize != GroundCoffee.GrindSize.Large;
         }
         

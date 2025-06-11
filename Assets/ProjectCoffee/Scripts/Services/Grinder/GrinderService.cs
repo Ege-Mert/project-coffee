@@ -19,6 +19,9 @@ namespace ProjectCoffee.Services.Grinder
         
         private readonly GrinderLogic logic;
         private readonly GrinderState state;
+        private float autoProcessTimer = 0f;
+        private bool shouldContinueProcessing = false;
+        private bool isWaitingForAutoProcess = false;
         
         #region IGrinderService Properties
         
@@ -106,29 +109,64 @@ namespace ProjectCoffee.Services.Grinder
         {
             Debug.Log($"GrinderService: Button pressed. {state.GetStateInfo()}");
             
-            if (upgradeLevel < 1 || !HasBeans || state.IsProcessing)
+            if (upgradeLevel < 1 || !HasBeans)
             {
                 Debug.Log("GrinderService: Cannot process button press");
                 return;
             }
             
-            ProcessGrinding();
+            // For level 1, start continuous processing with delay like level 2
+            if (upgradeLevel == 1)
+            {
+                shouldContinueProcessing = true;
+                if (!state.IsProcessing && !isWaitingForAutoProcess)
+                {
+                    Debug.Log("GrinderService: Starting level 1 continuous processing with delay");
+                    isWaitingForAutoProcess = true;
+                    autoProcessTimer = 0f;
+                }
+            }
+            else
+            {
+                ProcessGrinding();
+            }
         }
         
         public void ProcessUpdate(float deltaTime)
         {
-            if (CurrentState != MachineState.Processing) return;
-            
-            float processTime = logic.GetProcessTime(upgradeLevel);
-            if (processTime > 0)
+            // Handle processing progress for all levels
+            if (CurrentState == MachineState.Processing)
             {
-                processProgress += deltaTime / processTime;
-                UpdateProgress(processProgress);
-                
-                if (processProgress >= 1.0f)
+                float processTime = logic.GetProcessTime(upgradeLevel);
+                if (processTime > 0)
                 {
-                    Debug.Log("GrinderService: Processing complete via time update");
-                    CompleteProcessing();
+                    processProgress += deltaTime / processTime;
+                    UpdateProgress(processProgress);
+                    
+                    if (processProgress >= 1.0f)
+                    {
+                        Debug.Log("GrinderService: Processing complete via time update");
+                        CompleteProcessing();
+                    }
+                }
+            }
+            
+            // Handle auto-processing delay timer for level 1 and 2
+            if ((upgradeLevel == 1 || upgradeLevel == 2) && isWaitingForAutoProcess)
+            {
+                autoProcessTimer += deltaTime;
+                float processDelay = logic.GetProcessDelay(upgradeLevel);
+                
+                Debug.Log($"GrinderService: Level {upgradeLevel} process timer: {autoProcessTimer:F2}/{processDelay:F2}");
+                
+                if (autoProcessTimer >= processDelay)
+                {
+                    Debug.Log($"GrinderService: Level {upgradeLevel} process delay completed, starting grinding");
+                    autoProcessTimer = 0f;
+                    isWaitingForAutoProcess = false;
+                    
+                    // Start the actual grinding process
+                    ProcessGrinding();
                 }
             }
         }
@@ -137,14 +175,42 @@ namespace ProjectCoffee.Services.Grinder
         {
             Debug.Log("GrinderService: Ground coffee removed");
             state.RemoveCoffee();
+            
+            // If we were waiting due to max coffee size, resume processing for level 1
+            if (upgradeLevel == 1 && shouldContinueProcessing && HasBeans && !state.IsProcessing && !isWaitingForAutoProcess)
+            {
+                Debug.Log("GrinderService: Resuming level 1 processing after coffee removal with delay");
+                isWaitingForAutoProcess = true;
+                autoProcessTimer = 0f;
+            }
+            // For level 2, check if we should auto-process remaining beans
+            else if (upgradeLevel == 2 && HasBeans && !state.IsProcessing && !isWaitingForAutoProcess)
+            {
+                Debug.Log("GrinderService: Level 2 - Checking for beans to auto-process after coffee removal");
+                CheckAutoProcess();
+            }
         }
         
         public void CheckAutoProcess()
         {
-            if (logic.ShouldAutoProcess(upgradeLevel, state.CurrentBeans, state.HasExistingCoffee, state.CurrentCoffeeSize))
+            Debug.Log($"GrinderService: CheckAutoProcess called - Level: {upgradeLevel}, HasBeans: {HasBeans}, IsProcessing: {state.IsProcessing}, IsWaiting: {isWaitingForAutoProcess}");
+            
+            if (upgradeLevel == 2 && logic.ShouldAutoProcess(upgradeLevel, state.CurrentBeans, state.HasExistingCoffee, state.CurrentCoffeeSize))
             {
-                Debug.Log("GrinderService: Auto-processing triggered");
-                ProcessGrinding();
+                if (!state.IsProcessing && !isWaitingForAutoProcess)
+                {
+                    Debug.Log("GrinderService: Starting auto-process delay");
+                    isWaitingForAutoProcess = true;
+                    autoProcessTimer = 0f;
+                }
+                else
+                {
+                    Debug.Log($"GrinderService: Cannot start auto-process - IsProcessing: {state.IsProcessing}, IsWaiting: {isWaitingForAutoProcess}");
+                }
+            }
+            else
+            {
+                Debug.Log($"GrinderService: Auto-process conditions not met - Level: {upgradeLevel}, ShouldAutoProcess: {logic.ShouldAutoProcess(upgradeLevel, state.CurrentBeans, state.HasExistingCoffee, state.CurrentCoffeeSize)}");
             }
         }
         
@@ -221,6 +287,30 @@ namespace ProjectCoffee.Services.Grinder
             state.SetProcessing(false);
             
             Debug.Log("GrinderService: Processing completed");
+            
+            // Check if we should continue processing for level 1
+            if (upgradeLevel == 1 && shouldContinueProcessing)
+            {
+                // Check if we can continue grinding
+                if (HasBeans && logic.CanGrind(state.CurrentBeans, state.HasExistingCoffee, state.CurrentCoffeeSize))
+                {
+                    Debug.Log("GrinderService: Continuing processing for level 1 with delay");
+                    // Use the same delay system as level 2
+                    isWaitingForAutoProcess = true;
+                    autoProcessTimer = 0f;
+                }
+                else
+                {
+                    Debug.Log("GrinderService: Stopping continuous processing - no more beans or coffee at max size");
+                    shouldContinueProcessing = false;
+                }
+            }
+            // For level 2, check if we should auto-process the next bean
+            else if (upgradeLevel == 2)
+            {
+                // Trigger auto-process check which will start the delay timer
+                CheckAutoProcess();
+            }
         }
         
         #endregion
@@ -260,6 +350,28 @@ namespace ProjectCoffee.Services.Grinder
             };
             
             NotifyUser(message);
+            
+            // Check for existing beans when upgrading to level 2
+            if (level == 2 && HasBeans)
+            {
+                Debug.Log("GrinderService: Level 2 upgrade - checking existing beans for auto-processing");
+                CheckAutoProcess();
+            }
+        }
+        
+        #endregion
+        
+        #region Public Control Methods
+        
+        /// <summary>
+        /// Stop continuous processing (for level 1)
+        /// </summary>
+        public void StopContinuousProcessing()
+        {
+            shouldContinueProcessing = false;
+            isWaitingForAutoProcess = false;
+            autoProcessTimer = 0f;
+            Debug.Log("GrinderService: Continuous processing stopped manually");
         }
         
         #endregion
@@ -272,6 +384,9 @@ namespace ProjectCoffee.Services.Grinder
             state.SetBeanCount(0);
             state.RemoveCoffee();
             state.SetProcessing(false);
+            shouldContinueProcessing = false;
+            autoProcessTimer = 0f;
+            isWaitingForAutoProcess = false;
         }
         
         #endregion

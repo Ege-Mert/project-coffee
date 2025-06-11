@@ -20,13 +20,13 @@ MonoBehaviour:
   - upgradeName: Semi-Automatic Grinder
     description: Press button to grind beans
     upgradeCost: 100
-    processTimeMultiplier: 4
+    processTimeMultiplier: 0.5
     interactionType: 1
     upgradeIcon: {fileID: 0}
   - upgradeName: Automatic Grinder
     description: Beans are ground automatically
     upgradeCost: 250
-    processTimeMultiplier: 4
+    processTimeMultiplier: 0.5
     interactionType: 4
     upgradeIcon: {fileID: 0}
   maxBeanFills: 3
@@ -37,4 +37,6 @@ MonoBehaviour:
   - 18
   level0SpinsRequired: 3
   level1GrindTime: 3
+  level1ProcessDelay: 1
   level2GrindTime: 3
+  level2AutoProcessDelay: 1
