@@ -3,6 +3,7 @@ using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Services;
 using ProjectCoffee.Machines.Dosing.Logic;
 using ProjectCoffee.Core;
+using UnityEngine;
 
 namespace ProjectCoffee.Services.Dosing
 {
@@ -96,8 +97,36 @@ namespace ProjectCoffee.Services.Dosing
         /// </summary>
         public void SetPortafilterPresent(bool present)
         {
+            bool wasPresent = state.HasPortafilter;
+            
+            Debug.Log($"DosingService: SetPortafilterPresent({present}) - Was present: {wasPresent}, Current state: {state.CurrentState}");
+            
             state.SetPortafilterPresence(present);
-            UpdateMachineState();
+            
+            // When a new portafilter is placed, ensure proper state transition
+            if (!wasPresent && present)
+            {
+                Debug.Log("DosingService: New portafilter placed, forcing state reset");
+                
+                // Force machine to Ready state if conditions are met
+                if (state.StoredCoffeeAmount > 0)
+                {
+                    Debug.Log("DosingService: Forcing transition to Ready state");
+                    state.SetMachineState(MachineState.Ready);
+                }
+                else
+                {
+                    Debug.Log("DosingService: No coffee in storage, staying in Idle");
+                    state.SetMachineState(MachineState.Idle);
+                }
+            }
+            else if (wasPresent && !present)
+            {
+                Debug.Log("DosingService: Portafilter removed, updating state");
+                UpdateMachineState();
+            }
+            
+            Debug.Log($"DosingService: SetPortafilterPresent complete - Final state: {state.CurrentState}");
         }
 
         /// <summary>
@@ -188,12 +217,21 @@ namespace ProjectCoffee.Services.Dosing
         /// </summary>
         public bool StartButtonProcess()
         {
+            Debug.Log($"DosingService: StartButtonProcess called - Level: {upgradeLevel}, State: {state.CurrentState}, Processing: {state.IsProcessing}");
+            
             if (!logic.CanPerformOperation(upgradeLevel, DosingOperation.ButtonPress))
+            {
+                Debug.Log("DosingService: Cannot perform button operation for current level");
                 return false;
+            }
 
             if (!state.CanStartProcessing())
+            {
+                Debug.Log($"DosingService: Cannot start processing - HasPortafilter: {state.HasPortafilter}, Storage: {state.StoredCoffeeAmount}, Processing: {state.IsProcessing}, State: {state.CurrentState}");
                 return false;
+            }
 
+            Debug.Log("DosingService: Starting button process - setting processing state");
             state.SetProcessingState(true);
             state.SetMachineState(MachineState.Processing);
             
@@ -205,18 +243,29 @@ namespace ProjectCoffee.Services.Dosing
         /// </summary>
         public void CompleteButtonProcess()
         {
+            Debug.Log($"DosingService: CompleteButtonProcess called - Current portafilter: {state.PortafilterCoffeeAmount}g, Storage: {state.StoredCoffeeAmount}g");
+            
             var calculation = logic.CalculateAutoDose(
                 state.PortafilterCoffeeAmount, 
                 state.StoredCoffeeAmount
             );
 
+            Debug.Log($"DosingService: Auto-dose calculation - AmountToDispense: {calculation.AmountToDispense}g, ResultingAmount: {calculation.ResultingAmount}g");
+
             if (calculation.AmountToDispense > 0)
             {
                 state.TransferCoffee(calculation.AmountToDispense);
+                Debug.Log($"DosingService: Transferred {calculation.AmountToDispense}g coffee");
             }
 
+            Debug.Log("DosingService: Setting processing state to false");
             state.SetProcessingState(false);
             EvaluateAndCompleteProcess();
+            
+            // Ensure we return to ready state if conditions are met
+            UpdateMachineState();
+            
+            Debug.Log($"DosingService: CompleteButtonProcess finished - Final state: {state.CurrentState}");
         }
 
         #endregion
@@ -225,13 +274,33 @@ namespace ProjectCoffee.Services.Dosing
 
         private void UpdateMachineState()
         {
+            // Don't change state if we're currently processing
+            if (state.IsProcessing)
+            {
+                if (state.CurrentState != MachineState.Processing)
+                {
+                    state.SetMachineState(MachineState.Processing);
+                }
+                return;
+            }
+            
+            // If we have portafilter and storage, should be ready
             if (state.ShouldBeReady() && state.CurrentState != MachineState.Ready)
             {
+                Debug.Log($"DosingService: Transitioning to Ready - HasPortafilter: {state.HasPortafilter}, Storage: {state.StoredCoffeeAmount}");
                 state.SetMachineState(MachineState.Ready);
             }
+            // If missing requirements, should be idle
             else if (!state.ShouldBeReady() && state.CurrentState == MachineState.Ready)
             {
+                Debug.Log($"DosingService: Transitioning to Idle - HasPortafilter: {state.HasPortafilter}, Storage: {state.StoredCoffeeAmount}");
                 state.SetMachineState(MachineState.Idle);
+            }
+            // If portafilter has coffee and we're not processing, should be complete
+            else if (state.PortafilterCoffeeAmount > 0 && !state.IsProcessing && state.CurrentState != MachineState.Complete)
+            {
+                Debug.Log($"DosingService: Transitioning to Complete - Portafilter has {state.PortafilterCoffeeAmount}g");
+                state.SetMachineState(MachineState.Complete);
             }
         }
 
@@ -256,6 +325,8 @@ namespace ProjectCoffee.Services.Dosing
             {
                 UpdateMachineState();
             }
+            
+            Debug.Log($"DosingService: Process evaluation complete - State: {state.CurrentState}, PortafilterAmount: {state.PortafilterCoffeeAmount}g");
         }
 
         #endregion

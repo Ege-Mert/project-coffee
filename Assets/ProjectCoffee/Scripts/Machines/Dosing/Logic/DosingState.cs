@@ -190,7 +190,9 @@ namespace ProjectCoffee.Machines.Dosing.Logic
             return hasPortafilter && 
                    storedCoffeeAmount > 0 && 
                    !isProcessing && 
-                   (currentState == MachineState.Ready || currentState == MachineState.Idle);
+                   (currentState == MachineState.Ready || 
+                    currentState == MachineState.Idle ||
+                    currentState == MachineState.Complete);
         }
 
         /// <summary>

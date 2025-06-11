@@ -256,6 +256,15 @@ namespace ProjectCoffee.Machines.Dosing
         {
             if (service != null && upgradeLevel == 1)
             {
+                Debug.Log($"DosingMachine: Auto-dose button clicked - Current state: {service.CurrentState}");
+                
+                // Ensure we're not already processing
+                if (service.CurrentState == MachineState.Processing)
+                {
+                    Debug.Log("DosingMachine: Already processing, ignoring button click");
+                    return;
+                }
+                
                 StartCoroutine(ButtonDosingProcess());
             }
         }
@@ -269,10 +278,17 @@ namespace ProjectCoffee.Machines.Dosing
         /// </summary>
         private IEnumerator ButtonDosingProcess()
         {
+            Debug.Log($"DosingMachine: Starting button dosing process - State: {service?.CurrentState}");
+            
             if (!service.StartButtonProcess())
+            {
+                Debug.Log("DosingMachine: Failed to start button process");
                 yield break;
+            }
             
             float processingTime = service.GetProcessingTime();
+            Debug.Log($"DosingMachine: Processing time: {processingTime}s");
+            
             float startTime = Time.time;
             
             // Animate processing
@@ -283,6 +299,8 @@ namespace ProjectCoffee.Machines.Dosing
                 yield return null;
             }
             
+            Debug.Log($"DosingMachine: Processing animation complete after {Time.time - startTime:F1}s");
+            
             // Complete the process
             service.CompleteButtonProcess();
             
@@ -290,6 +308,7 @@ namespace ProjectCoffee.Machines.Dosing
             if (currentPortafilter != null)
             {
                 UpdatePortafilterContents(service.PortafilterCoffeeAmount);
+                Debug.Log($"DosingMachine: Updated portafilter to {service.PortafilterCoffeeAmount}g");
             }
         }
         
