@@ -6312,6 +6312,7 @@ MonoBehaviour:
   beansLevelImage: {fileID: 142200152}
   grindHandle: {fileID: 1321812441}
   grindButton: {fileID: 1527944285}
+  stopButton: {fileID: 0}
   groundCoffeeOutputVisual: {fileID: 0}
   beansLevelAnimationDuration: 0.3
   manualGrindIndicator: {fileID: 0}
@@ -6678,34 +6679,34 @@ MonoBehaviour:
   processCompleteSound: {fileID: 0}
   machineAnimator: {fileID: 0}
   brewingSlotUIs:
-  - portafilterZone: {fileID: 546816798}
-    cupZone: {fileID: 1318800932}
+  - portafilterZone: {fileID: 0}
+    cupZone: {fileID: 0}
     activeIndicator: {fileID: 1479152356}
     readyIndicator: {fileID: 1818626160}
     progressFill: {fileID: 1297442485}
     brewingParticles: {fileID: 0}
-    slotContainer: {fileID: 0}
+    slotContainer: {fileID: 1960569533}
   - portafilterZone: {fileID: 1536601756}
     cupZone: {fileID: 556199972}
     activeIndicator: {fileID: 239556599}
     readyIndicator: {fileID: 810611443}
     progressFill: {fileID: 1297442485}
     brewingParticles: {fileID: 0}
-    slotContainer: {fileID: 0}
+    slotContainer: {fileID: 2095999736}
   - portafilterZone: {fileID: 820558487}
     cupZone: {fileID: 1138546028}
     activeIndicator: {fileID: 1206379497}
     readyIndicator: {fileID: 1146255299}
     progressFill: {fileID: 1146255300}
     brewingParticles: {fileID: 0}
-    slotContainer: {fileID: 0}
+    slotContainer: {fileID: 282882655}
   - portafilterZone: {fileID: 714453894}
     cupZone: {fileID: 245976962}
     activeIndicator: {fileID: 12851738}
     readyIndicator: {fileID: 1297442484}
     progressFill: {fileID: 1297442485}
     brewingParticles: {fileID: 0}
-    slotContainer: {fileID: 0}
+    slotContainer: {fileID: 1724035249}
   brewButton: {fileID: 755693586}
   autoBrewIndicator: {fileID: 0}
   manualBrewIndicator: {fileID: 0}

@@ -4,15 +4,15 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using ProjectCoffee.Machines;
-using ProjectCoffee.Core;
+using ProjectCoffee.Machines.EspressoMachine;
+using ProjectCoffee.Machines.Components;
 using ProjectCoffee.Services;
 using ProjectCoffee.Services.Interfaces;
-using ProjectCoffee.Machines.Components;
-using CoreServices = ProjectCoffee.Core.Services; // Add this alias
+using CoreServices = ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.UI.Machines
 {
-    public class EspressoMachineUI : MachineUIBase<EspressoMachine>
+    public class EspressoMachineUI : MachineUIBase<ProjectCoffee.Machines.EspressoMachine.EspressoMachine>
     {
         [System.Serializable]
         public class BrewingSlotUI
@@ -100,12 +100,15 @@ namespace ProjectCoffee.UI.Machines
         
         protected override void HandleUpgradeApplied(int level)
         {
+            Debug.Log($"EspressoMachineUI: HandleUpgradeApplied called with level {level}");
             base.HandleUpgradeApplied(level);
             UpdateUIForUpgradeLevel(level);
         }
         
         private void UpdateUIForUpgradeLevel(int level)
         {
+            Debug.Log($"EspressoMachineUI: UpdateUIForUpgradeLevel called with level {level}");
+            
             if (brewButton != null)
                 brewButton.gameObject.SetActive(level < 2);
                 
@@ -115,12 +118,23 @@ namespace ProjectCoffee.UI.Machines
             if (manualBrewIndicator != null)
                 manualBrewIndicator.SetActive(level < 2);
             
+            Debug.Log($"EspressoMachineUI: Processing {brewingSlotUIs.Count} brewing slot UIs");
+            
             for (int i = 0; i < brewingSlotUIs.Count; i++)
             {
                 bool shouldBeActive = i < 2 || level >= 2;
                 
+                Debug.Log($"EspressoMachineUI: Slot {i} shouldBeActive = {shouldBeActive} (i < 2: {i < 2}, level >= 2: {level >= 2})");
+                
                 if (brewingSlotUIs[i].slotContainer != null)
+                {
                     brewingSlotUIs[i].slotContainer.gameObject.SetActive(shouldBeActive);
+                    Debug.Log($"EspressoMachineUI: Set slot {i} container '{brewingSlotUIs[i].slotContainer.name}' to {shouldBeActive}");
+                }
+                else
+                {
+                    Debug.LogWarning($"EspressoMachineUI: Slot {i} slotContainer is null!");
+                }
             }
         }
         

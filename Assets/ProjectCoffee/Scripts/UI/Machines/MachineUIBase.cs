@@ -68,7 +68,7 @@ namespace ProjectCoffee.UI.Machines
             var machineBase = Machine as IMachineEvents;
             if (machineBase != null)
             {
-                machineBase.OnStateChanged += HandleStateChanged;
+                machineBase.OnStateChanged_Event += HandleStateChanged;
                 machineBase.OnProgressChanged += HandleProgressChanged;
                 machineBase.OnProcessCompleted += HandleProcessCompleted;
                 machineBase.OnUpgradeApplied += HandleUpgradeApplied;
@@ -183,7 +183,7 @@ namespace ProjectCoffee.UI.Machines
             var machineBase = Machine as IMachineEvents;
             if (machineBase != null)
             {
-                machineBase.OnStateChanged -= HandleStateChanged;
+                machineBase.OnStateChanged_Event -= HandleStateChanged;
                 machineBase.OnProgressChanged -= HandleProgressChanged;
                 machineBase.OnProcessCompleted -= HandleProcessCompleted;
                 machineBase.OnUpgradeApplied -= HandleUpgradeApplied;
@@ -196,7 +196,7 @@ namespace ProjectCoffee.UI.Machines
     /// </summary>
     public interface IMachineEvents
     {
-        event System.Action<MachineState> OnStateChanged;
+        event System.Action<MachineState> OnStateChanged_Event;
         event System.Action<float> OnProgressChanged;
         event System.Action OnProcessCompleted;
         event System.Action<int> OnUpgradeApplied;

@@ -1,6 +1,5 @@
 using UnityEngine;
 using ProjectCoffee.Interaction.Helpers;
-using ProjectCoffee.Services.Interfaces;
 
 namespace ProjectCoffee.Machines.Components
 {
@@ -10,15 +9,16 @@ namespace ProjectCoffee.Machines.Components
     public abstract class EspressoDropZoneBase : DropZone
     {
         [SerializeField] protected int slotIndex;
-        protected EspressoMachine espressoMachine;
+        // Use the fully qualified name to avoid namespace conflict
+        protected ProjectCoffee.Machines.EspressoMachine.EspressoMachine espressoMachine;
         protected DropZoneItemTracker itemTracker;
         
         protected virtual void Start()
         {
             // base.Awake();
             
-            // Find the espresso machine in parent
-            espressoMachine = GetComponentInParent<EspressoMachine>();
+            // Find the espresso machine in parent - use fully qualified name
+            espressoMachine = GetComponentInParent<ProjectCoffee.Machines.EspressoMachine.EspressoMachine>();
             if (espressoMachine == null)
             {
                 Debug.LogError($"EspressoDropZoneBase on {gameObject.name} requires an EspressoMachine in parent!");

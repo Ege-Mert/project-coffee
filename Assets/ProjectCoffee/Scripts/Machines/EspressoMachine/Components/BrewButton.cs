@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using ProjectCoffee.Machines;
+using ProjectCoffee.Machines.EspressoMachine;
 
 public class BrewButton : Clickable
 {

@@ -3,13 +3,14 @@ using UnityEngine;
 using UnityEngine.Events;
 using ProjectCoffee.Services.Interfaces;
 using ProjectCoffee.Core;
+using ProjectCoffee.UI.Machines;
 using CoreServices = ProjectCoffee.Core.Services;
 
 namespace ProjectCoffee.Machines
 {
     using MachineState = ProjectCoffee.Services.MachineState;
     
-    public abstract class MachineBase : MonoBehaviour
+    public abstract class MachineBase : MonoBehaviour, IMachineEvents
     {
         [Header("Configuration")]
         [SerializeField] protected MachineConfig config;
